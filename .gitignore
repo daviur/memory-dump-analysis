@@ -1,0 +1,10 @@
+memory-dump-analysis.wpu
+*.core
+*.segments
+*.modules
+*.heaps
+*.txt
+*.dmp
+*.pyc
+*~
+test-dumps/
