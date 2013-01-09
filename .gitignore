@@ -6,5 +6,8 @@ memory-dump-analysis.wpu
 *.txt
 *.dmp
 *.pyc
+*.cache
+*.dot
+*.pdf
 *~
 test-dumps/
