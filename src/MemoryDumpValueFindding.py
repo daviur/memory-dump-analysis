@@ -8,6 +8,8 @@ import MemoryDumpReader
 import struct
 import sys
 import MemoryDumpServices
+import MemoryDumpDiffing
+import argparse
 
 
 class Encoding:
@@ -46,14 +48,18 @@ def get_possible_values(segment, offset):
 
 
 if __name__ == '__main__':
-    filename = sys.argv[1]
-    value = sys.argv[2]
-
-    md = MemoryDumpReader.read_memory_dump(filename)
-    md.build_memory_graph()
-#    offsets = find_value(md.data_structures[0x344c68], value)
-    offsets = find_value(md, value)
-    print('Number of candidate offsets:', len(offsets))
-
-    for (o, t) in offsets:
-        print('0x{:x}'.format(MemoryDumpServices.address_from_offset(md, o)), t)
+    parser = argparse.ArgumentParser(description='Search for values in the intersection of memory dumps.')
+    parser.add_argument('-m', required=True, dest='dumps' , nargs='+', metavar='memorydumps', help='memory dump files.')
+    parser.add_argument('-v', required=True, dest='values', nargs='+', metavar='values', help='value corresponding to each memory dump.')
+    args = parser.parse_args()    
+    
+    memory_dumps = [MemoryDumpReader.read_memory_dump(f) for f in args.dumps]    
+    
+    if len(memory_dumps) == 1:                                                       
+        offsets = find_value(memory_dumps[0], args.values[0])
+        print('Number of candidate offsets:', len(offsets))
+    
+        for (o, t) in offsets:
+            print('0x{:x}'.format(MemoryDumpServices.address_from_offset(md, o)), t)
+    else:
+        intersection = MemoryDumpDiffing.diff_memory_segments(memory_dumps)

@@ -67,9 +67,9 @@ def diff_pair_memory_graphs(memory_dump1, memory_dump2):
     changed_globals1 = diff_globals2 & diff_globals1
     removed_globals = diff_globals1 - changed_globals1
     added_globals = diff_globals2 - changed_globals2
-#    print('Changed globals: ', len(changed_globals1))
-#    print('Removed globals: ', len(removed_globals))
-#    print('Added globals: ', len(added_globals))
+    #print('Changed globals: ', len(changed_globals2))
+    #print('Removed globals: ', len(removed_globals))
+    #print('Added globals: ', len(added_globals))
 
     diff_ds1 = set(memory_dump1.data_structures.values()) - set(memory_dump2.data_structures.values())
     diff_ds1 = KeyedSet(diff_ds1, key=lambda seg: seg.address)
@@ -79,9 +79,13 @@ def diff_pair_memory_graphs(memory_dump1, memory_dump2):
     changed_ds1 = diff_ds2 & diff_ds1
     removed_ds = diff_ds1 - changed_ds1
     added_ds = diff_ds2 - changed_ds2
-#    print('Changed ds: ', len(changed_ds1))
-#    print('Removed ds: ', len(removed_ds))
-#    print('Added ds: ', len(added_ds))
+    #print('Changed ds: ', len(changed_ds2))
+    #print('Removed ds: ', len(removed_ds))
+    #print('Added ds: ', len(added_ds))
+
+    #print(hash(memory_dump1.data_structures[int('0x4b343d0', 16)]), hash(memory_dump2.data_structures[int('0x4b343d0',16)]))
+    #print(repr(memory_dump1.data_structures[int('0x4b343d0', 16)]))
+    #print(repr(memory_dump2.data_structures[int('0x4b343d0', 16)]))
 
     return (changed_globals1 | changed_ds1, changed_globals2 | changed_ds2, removed_globals | removed_ds, added_globals | added_ds)
 
@@ -92,7 +96,7 @@ def diff_memory_graphs(memory_dumps):
         differences.append(diff_pair_memory_graphs(memory_dumps[i], memory_dumps[i + 1]))
 
     if len(differences) == 1:
-        __draw_graph_diffing(memory_dumps[0], memory_dumps[1], differences[0])
+        #__draw_graph_diffing(memory_dumps[0], memory_dumps[1], differences[0])
         return (differences[0][1], differences[0][2], differences[0][3])
     else:
         keyedsets1 = list()
@@ -124,14 +128,14 @@ def diff_memory_graphs(memory_dumps):
 
 def export_memory_graph_intersection(memory_dumps, intersection):
     graph = memory_dumps[-1].memory_graph.copy()
-#
+
     for n in graph.nodes()[:]:
         for i in intersection[0] | intersection[2]:
             if nx.has_path(graph, n, i):
                 break
         else:
             graph.remove_node(n)
-#
+
     for n in graph.nodes():
         graph.node[n]['color'] = 'turquoise'
     for n in intersection[0]:
@@ -151,9 +155,25 @@ def diff_pair_memory_segments(segment1, segment2):
 
 def diff_memory_segments(segments):
     sets = list()
+    if len(segments) == 2:
+        return set(diff_pair_memory_segments(segments[0], segments[1]))
     for i in xrange(len(segments) - 1):
         sets.append(set(diff_pair_memory_segments(segments[i], segments[i + 1])))
     return set.intersection(*sets)
+
+
+def diff_memory_segments_by_address(address, memory_dumps):
+    dss = list()
+    for md in memory_dumps:
+        for m in md.modules:
+            if m.address == address:
+                dss.append(m)
+                break
+
+    if len(dss) == 0:
+        dss = [md.data_structures[address] for md in memory_dumps]
+
+    return diff_memory_segments(dss)    
 
 
 def draw_segments_diffing(segments, offsets):
@@ -174,34 +194,53 @@ def draw_segments_diffing(segments, offsets):
     plt.show()
 
 
+def substract_intersections(memory_dumps, dump, intersec1, intersec2): 
+    changed1 = KeyedSet(intersec1[0], key=lambda seg: seg.address)
+    changed2 = KeyedSet(intersec2[0], key=lambda seg: seg.address)
+    
+    inter = changed2 & changed1    
+    changed = changed1 - inter    
+    dss = list()
+    for seg in inter:
+        offsets1 = diff_memory_segments_by_address(seg.address, memory_dumps)
+        offsets2 = diff_memory_segments_by_address(seg.address, [memory_dumps[-1], dump])
+        offsets = offsets1 - offsets2        
+        if len(offsets) > 0:
+            print('{:x}'.format(seg.address), len(offsets))
+            changed.add(seg)    
+    
+    removed1 = KeyedSet(intersec1[1], key=lambda seg: seg.address)
+    removed2 = KeyedSet(intersec2[1], key=lambda seg: seg.address)
+    added1 = KeyedSet(intersec1[2], key=lambda seg: seg.address)
+    added2 = KeyedSet(intersec2[2], key=lambda seg: seg.address)    
+    return (changed, removed1 - removed2, added1 - added2)    
+
+
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Compares memory dumps, data structure by data structure.')
-    parser.add_argument('-g', dest='graph', action='store_true', help='compares the memory graphs.')
-    parser.add_argument(dest='filename' , metavar='memorydump', help='the file name of the memory dump.')
-    parser.add_argument(dest='filenames' , nargs='+', metavar='other', help='other files.')
+    parser = argparse.ArgumentParser(description='Diff memory dumps by memory graph.')    
+    parser.add_argument('-d', required=True, dest='dumps', nargs='+', metavar='memorydump', help='memory dumps to diff.')    
+    parser.add_argument('-r', dest='substract', metavar='memorydump', help='memory dump to substract.')
     args = parser.parse_args()
+    
+    memory_dumps = [MemoryDumpReader.read_memory_dump(f) for f in args.dumps]    
+        
+    for md in memory_dumps:
+        md.build_memory_graph()
 
-    md1 = MemoryDumpReader.read_memory_dump(args.filename)
-    memory_dumps = [md1]
-    for f in args.filenames:
-        md = MemoryDumpReader.read_memory_dump(f)
-        memory_dumps.append(md)
+    intersec1 = diff_memory_graphs(memory_dumps)
+            
+    if args.substract != None:
+        dump = MemoryDumpReader.read_memory_dump(args.substract)
+        dump.build_memory_graph()            
+        intersec2 = diff_memory_graphs([memory_dumps[-1], dump])        
+        intersec1 = substract_intersections(memory_dumps, dump, intersec1, intersec2)
+        
+    export_memory_graph_intersection(memory_dumps, intersec1)
 
-    if args.graph:
-        for md in memory_dumps:
-            md.build_memory_graph()
+    print('Changed:', len(intersec1[0]))
+    MemoryDumpServices.print_collection(intersec1[0])
+    print('Removed:', len(intersec1[1]))
+    MemoryDumpServices.print_collection(intersec1[1])
+    print('Added:', len(intersec1[2]))
+    MemoryDumpServices.print_collection(intersec1[2])
 
-        intersection = diff_memory_graphs(memory_dumps)
-        export_memory_graph_intersection(memory_dumps, intersection)
-
-        print('Changed:', len(intersection[0]))
-        MemoryDumpServices.print_collection(intersection[0])
-        print('Removed:', len(intersection[1]))
-        MemoryDumpServices.print_collection(intersection[1])
-        print('Added:', len(intersection[2]))
-        MemoryDumpServices.print_collection(intersection[2])
-    else:
-        offsets = diff_memory_segments(memory_dumps)
-        print('Different offsets:', len(offsets))
-        draw_segments_diffing(memory_dumps, offsets)
-#        MemoryDumpServices.print_collection(offsets)

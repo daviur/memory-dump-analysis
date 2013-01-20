@@ -11,17 +11,13 @@ import argparse
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Compares memory dumps data structures')
-    parser.add_argument('-d', dest='address' , metavar='address', help='address of the data structure to compare.')
-    parser.add_argument(dest='filename' , metavar='memorydump', help='the file name of the memory dump.')
-    parser.add_argument(dest='filenames' , nargs='+', metavar='other', help='other files.')
+    parser.add_argument(dest='address' , metavar='address', help='address of the data structure to compare.')
+    parser.add_argument(dest='dumps', nargs='+', metavar='dumps', help='memory dump files.')    
+    parser.add_argument('-r', dest='dump', metavar='dump', help='memory dump to remove.')    
     args = parser.parse_args()
 
-    md1 = MemoryDumpReader.read_memory_dump(args.filename)
-    memory_dumps = [md1]
-    for f in args.filenames:
-        md = MemoryDumpReader.read_memory_dump(f)
-        memory_dumps.append(md)
-
+    memory_dumps = [MemoryDumpReader.read_memory_dump(f) for f in args.dumps]
+    
     for md in memory_dumps:
         md.build_memory_graph()
 
@@ -35,14 +31,33 @@ if __name__ == '__main__':
     if len(dss) == 0:
         dss = [md.data_structures[int(args.address, 16)] for md in memory_dumps]
 
-    offsets = MemoryDumpDiffing.diff_memory_segments(dss)
-    print("Different offsets:", len(offsets))
-    for o in offsets:
-        print('Offset:', o)
-        for (md, ds) in zip(memory_dumps, dss):
-            print('\t', md.name, '-', '0x{:x}'.format(ds.address))
-            for (t, v) in MemoryDumpValueFindding.get_possible_values(ds, o):
-                print('\t\t{:7} {}'.format(t, v))
+    offsets1 = MemoryDumpDiffing.diff_memory_segments(dss)
+    
+    if args.dump != None:
+        dump = MemoryDumpReader.read_memory_dump(args.dump)
+        dump.build_memory_graph()
+        dss2 = list()
+        for m in memory_dumps[-1].modules:
+            if m.address == int(args.address, 16):
+                dss2.append(m)
+                break
+        for m in dump.modules:
+            if m.address == int(args.address, 16):
+                dss2.append(m)
+                break        
+        if len(dss2) == 0:
+            dss2 = [memory_dumps[-1].data_structures[int(args.address, 16)], dump.data_structures[int(args.address, 16)]]                
+        offsets2 = MemoryDumpDiffing.diff_memory_segments(dss2)
+        offsets1 = offsets1 - offsets2
+    
+    print("Different offsets:", len(offsets1))
+    for o in offsets1:
+        print(o)
+        #print('Offset:', o)
+        #for (md, ds) in zip(memory_dumps, dss):
+            #print('\t', md.name, '-', '0x{:x}'.format(ds.address))
+            #for (t, v) in MemoryDumpValueFindding.get_possible_values(ds, o):
+                #print('\t\t{:7} {}'.format(t, v))
 
-    MemoryDumpDiffing.draw_segments_diffing(dss, offsets)
+    MemoryDumpDiffing.draw_segments_diffing(dss, offsets1)
 

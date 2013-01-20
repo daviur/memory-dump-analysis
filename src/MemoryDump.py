@@ -11,7 +11,7 @@ import networkx as nx
 import numpy as np
 import struct
 from collections import OrderedDict
-import cPickle
+import pickle
 
 # Renaming function
 afo = MemoryDumpServices.address_from_offset
@@ -50,7 +50,7 @@ class CacheDecorator:
     def build_memory_graph(self):
         try:
             with open(self.name + '.cache', 'rb') as f:
-                md = cPickle.load(f)
+                md = pickle.load(f)
                 self.g_pointers = self.decorated.g_pointers = md.g_pointers
                 self.data_structures = self.decorated.data_structures = md.data_structures
                 self.memory_graph = self.decorated.memory_graph = md.memory_graph
@@ -59,7 +59,7 @@ class CacheDecorator:
             self.g_pointers = self.decorated.g_pointers
             self.data_structures = self.decorated.data_structures
             with open(self.name + '.cache', 'wr') as f:
-                cPickle.dump(self.decorated, f)
+                pickle.dump(self.decorated, f)
         return self.memory_graph
 
 
@@ -245,6 +245,6 @@ if __name__ == '__main__':
     memory_dump = MemoryDumpReader.read_memory_dump(filename)
     memory_dump.build_memory_graph()
     MemoryDumpServices.export_memory_graph(memory_dump)
-    MemoryDumpServices.draw_memory_graph(memory_dump)
+    #MemoryDumpServices.draw_memory_graph(memory_dump)
 
 

@@ -34,7 +34,7 @@ class Segment:
 
     def __hash__(self):
         if self.hash == None:
-            self.hash = hash(repr(self.address) + repr(self.offset) + repr(self.size) + repr(self.data[self.offset: self.offset + self.size]))
+            self.hash = hash(repr(self.address) + repr(self.size) + repr(self.data[self.offset: self.offset + self.size]))
         return  self.hash
 
 
