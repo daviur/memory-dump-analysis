@@ -3,9 +3,9 @@ Created on Aug 6, 2012
 
 @author: David I. Urbina
 '''
-from MemoryDump import MemoryDump, CacheDecorator
-from MemoryDumpParts import Segment, Module
-import MemoryDumpServices
+from memorydump import MemoryDump, CacheDecorator
+from parts import Segment, Module
+import services
 
 class SegmentType:
     Segment = 1
@@ -31,7 +31,7 @@ def __calculate_segments_offsets(memory_dump, segments):
     Converts list of ranges of virtual addresses to a list of ranges of offset.
     '''
     for s in segments:
-        s.offset = MemoryDumpServices.offset_from_address(memory_dump, s.address)
+        s.offset = services.offset_from_address(memory_dump, s.address)
 
 
 def __read_memory_dump_data(filename):

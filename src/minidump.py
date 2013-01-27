@@ -4,7 +4,7 @@ Created on Nov 12, 2012
 
 @author: David I. Urbina
 '''
-from Adapters import WindowsTimeDateAdapter, WindowsTimeDeltaAdapter, \
+from adapters import WindowsTimeDateAdapter, WindowsTimeDeltaAdapter, \
     TimeDateAdapter, NullStringAdapter, TimeDeltaAdapter
 from construct import Embed, Const, Tunnel
 from construct.adapters import ExprAdapter, HexDumpAdapter

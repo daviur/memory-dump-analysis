@@ -4,9 +4,9 @@ Created on Nov 29, 2012
 @author: David I. Urbina
 '''
 from __future__ import print_function
-from KeyedSet import KeyedSet
-import MemoryDumpReader
-import MemoryDumpServices
+from keyedset import KeyedSet
+import reader
+import services
 import argparse
 import math
 import matplotlib.pyplot as plt
@@ -67,9 +67,6 @@ def diff_pair_memory_graphs(memory_dump1, memory_dump2):
     changed_globals1 = diff_globals2 & diff_globals1
     removed_globals = diff_globals1 - changed_globals1
     added_globals = diff_globals2 - changed_globals2
-    #print('Changed globals: ', len(changed_globals2))
-    #print('Removed globals: ', len(removed_globals))
-    #print('Added globals: ', len(added_globals))
 
     diff_ds1 = set(memory_dump1.data_structures.values()) - set(memory_dump2.data_structures.values())
     diff_ds1 = KeyedSet(diff_ds1, key=lambda seg: seg.address)
@@ -79,13 +76,6 @@ def diff_pair_memory_graphs(memory_dump1, memory_dump2):
     changed_ds1 = diff_ds2 & diff_ds1
     removed_ds = diff_ds1 - changed_ds1
     added_ds = diff_ds2 - changed_ds2
-    #print('Changed ds: ', len(changed_ds2))
-    #print('Removed ds: ', len(removed_ds))
-    #print('Added ds: ', len(added_ds))
-
-    #print(hash(memory_dump1.data_structures[int('0x4b343d0', 16)]), hash(memory_dump2.data_structures[int('0x4b343d0',16)]))
-    #print(repr(memory_dump1.data_structures[int('0x4b343d0', 16)]))
-    #print(repr(memory_dump2.data_structures[int('0x4b343d0', 16)]))
 
     return (changed_globals1 | changed_ds1, changed_globals2 | changed_ds2, removed_globals | removed_ds, added_globals | added_ds)
 
@@ -96,7 +86,7 @@ def diff_memory_graphs(memory_dumps):
         differences.append(diff_pair_memory_graphs(memory_dumps[i], memory_dumps[i + 1]))
 
     if len(differences) == 1:
-        #__draw_graph_diffing(memory_dumps[0], memory_dumps[1], differences[0])
+        __draw_graph_diffing(memory_dumps[0], memory_dumps[1], differences[0])
         return (differences[0][1], differences[0][2], differences[0][3])
     else:
         keyedsets1 = list()
@@ -205,8 +195,7 @@ def substract_intersections(memory_dumps, dump, intersec1, intersec2):
         offsets1 = diff_memory_segments_by_address(seg.address, memory_dumps)
         offsets2 = diff_memory_segments_by_address(seg.address, [memory_dumps[-1], dump])
         offsets = offsets1 - offsets2        
-        if len(offsets) > 0:
-            print('{:x}'.format(seg.address), len(offsets))
+        if len(offsets) > 0:            
             changed.add(seg)    
     
     removed1 = KeyedSet(intersec1[1], key=lambda seg: seg.address)
@@ -222,7 +211,7 @@ if __name__ == '__main__':
     parser.add_argument('-r', dest='substract', metavar='memorydump', help='memory dump to substract.')
     args = parser.parse_args()
     
-    memory_dumps = [MemoryDumpReader.read_memory_dump(f) for f in args.dumps]    
+    memory_dumps = [reader.read_memory_dump(f) for f in args.dumps]    
         
     for md in memory_dumps:
         md.build_memory_graph()
@@ -230,7 +219,7 @@ if __name__ == '__main__':
     intersec1 = diff_memory_graphs(memory_dumps)
             
     if args.substract != None:
-        dump = MemoryDumpReader.read_memory_dump(args.substract)
+        dump = reader.read_memory_dump(args.substract)
         dump.build_memory_graph()            
         intersec2 = diff_memory_graphs([memory_dumps[-1], dump])        
         intersec1 = substract_intersections(memory_dumps, dump, intersec1, intersec2)
@@ -238,9 +227,9 @@ if __name__ == '__main__':
     export_memory_graph_intersection(memory_dumps, intersec1)
 
     print('Changed:', len(intersec1[0]))
-    MemoryDumpServices.print_collection(intersec1[0])
+    services.print_collection(intersec1[0])
     print('Removed:', len(intersec1[1]))
-    MemoryDumpServices.print_collection(intersec1[1])
+    services.print_collection(intersec1[1])
     print('Added:', len(intersec1[2]))
-    MemoryDumpServices.print_collection(intersec1[2])
+    services.print_collection(intersec1[2])
 

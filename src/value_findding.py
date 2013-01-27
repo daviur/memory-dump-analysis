@@ -4,11 +4,11 @@ Created on Nov 30, 2012
 @author: David I. Urbina
 '''
 from __future__ import print_function
-import MemoryDumpReader
+import reader
 import struct
 import sys
-import MemoryDumpServices
-import MemoryDumpDiffing
+import services
+import diffing
 import argparse
 
 
@@ -53,13 +53,13 @@ if __name__ == '__main__':
     parser.add_argument('-v', required=True, dest='values', nargs='+', metavar='values', help='value corresponding to each memory dump.')
     args = parser.parse_args()    
     
-    memory_dumps = [MemoryDumpReader.read_memory_dump(f) for f in args.dumps]    
+    memory_dumps = [reader.read_memory_dump(f) for f in args.dumps]    
     
     if len(memory_dumps) == 1:                                                       
         offsets = find_value(memory_dumps[0], args.values[0])
         print('Number of candidate offsets:', len(offsets))
     
         for (o, t) in offsets:
-            print('0x{:x}'.format(MemoryDumpServices.address_from_offset(md, o)), t)
+            print('0x{:x}'.format(services.address_from_offset(md, o)), t)
     else:
-        intersection = MemoryDumpDiffing.diff_memory_segments(memory_dumps)
+        intersection = diffing.diff_memory_segments(memory_dumps)

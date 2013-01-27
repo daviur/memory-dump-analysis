@@ -4,8 +4,8 @@ Created on Aug 6, 2012
 @author: David I. Urbina
 '''
 from __future__ import print_function
-from MemoryDumpParts import DataStructure, Pointer
-import MemoryDumpServices
+from parts import DataStructure, Pointer
+import services
 import math
 import networkx as nx
 import numpy as np
@@ -14,16 +14,17 @@ from collections import OrderedDict
 import pickle
 
 # Renaming function
-afo = MemoryDumpServices.address_from_offset
-ofa = MemoryDumpServices.offset_from_address
+afo = services.address_from_offset
+ofa = services.offset_from_address
 
 # Global constants
 _ALLOC_UNIT_SZ_ = 8
-_WORD_SZ_ = 4
-_HEAP_SEG_ = 64
+_WORD_SZ_       = 4
+_HEAP_SEG_      = 64
 
 class HeapEntryFlags:
-    END = 0x10
+    END  = 0x10
+    FREE = 0x0
 
 
 class CacheDecorator:
@@ -45,6 +46,7 @@ class CacheDecorator:
         self.data_structures = decorated.data_structures
         self.memory_graph = self.decorated.memory_graph
         self.calculate_frequencies = self.decorated.calculate_frequencies
+        self.find_pointers_to_address = self.decorated.find_pointers_to_address
 
 
     def build_memory_graph(self):
@@ -86,31 +88,28 @@ class MemoryDump:
         last = False
         while not last:
             csize = struct.unpack('<H', self.data[entry_offset:entry_offset + 2])[0]  # current size
-#            psize = struct.unpack('<H', self.data[entry_offset + 2:entry_offset + 4])[0] # previous size
+            #psize = struct.unpack('<H', self.data[entry_offset + 2:entry_offset + 4])[0] # previous size
             flags = struct.unpack('<B', self.data[entry_offset + 5:entry_offset + 6])[0]  # flags
             ubytes = struct.unpack('<B', self.data[entry_offset + 6:entry_offset + 7])[0]  # unused bytes
             offset = entry_offset + _ALLOC_UNIT_SZ_
-            address = afo(self, offset)
-            size = (csize * _ALLOC_UNIT_SZ_) - ubytes
-            dss = DataStructure(address, offset, size, self.data)
-            self.data_structures[dss.address] = dss
+            address = afo(self, offset)                        
+            size = (csize * _ALLOC_UNIT_SZ_) - ubytes            
+            if flags != HeapEntryFlags.FREE:                
+                dss = DataStructure(address, offset, size, self.data)
+                self.data_structures[dss.address] = dss
             entry_offset += csize * _ALLOC_UNIT_SZ_
             last = flags & HeapEntryFlags.END
         self.memory_graph.add_nodes_from(self.data_structures.values(), color='red', style='filled')
 
 
     def __parse_heap_data_structures(self):
-#        for (h, d) in zip(self.heaps, self.heaps):
         for h in self.heaps:
-#            print('Heap 0x{:x}'.format(d[0]))
             for i in xrange(h.offset + 0x58, h.offset + 0x58 + (_HEAP_SEG_ * _WORD_SZ_), _WORD_SZ_):
                 seg_addr = struct.unpack('<I', self.data[i:i + _WORD_SZ_])[0]
                 if seg_addr != 0:
-#                    print('Segment 0x{:x}'.format(seg_addr))
                     seg_offset = ofa(self, seg_addr)
                     fea = struct.unpack('<I', self.data[seg_offset + 0x20: seg_offset + 0x20 + 4])[0]
                     feo = ofa(self, fea)
-#                    print('Entry 0x{:x}'.format(fe))
                     self.__parse_heap_entries(feo)
 
 
@@ -148,17 +147,16 @@ class MemoryDump:
         self.g_pointers = list()
         for m in self.modules:
             self.memory_graph.add_node(m, color='turquoise', style='filled')
-            for o in xrange(m.offset, m.offset + m.size, _WORD_SZ_):
-                addr = struct.unpack('<I', self.data[o:o + _WORD_SZ_])[0]
-                if self.__is_candidate_pointers(addr):
-                    p = Pointer(afo(self, o), o, addr, ofa(self, addr), m)
-                    dss = self.data_structures.get(p.d_address)
-                    if dss != None:
-                        m.pointers.append(p)
-                        self.memory_graph.add_edge(m, dss, label=p.offset - m.offset)
-#                        self.memory_graph.add_node(p, color='blue', style='filled')
-#                        self.memory_graph.add_edge(p, dss, label=0)
-            self.g_pointers.extend(m.pointers)
+            if m.size >= _WORD_SZ_:                                 #minimun size is the WORD size
+                for o in xrange(m.offset, m.offset + m.size, _WORD_SZ_):
+                    addr = struct.unpack('<I', self.data[o:o + _WORD_SZ_])[0]
+                    if self.__is_candidate_pointers(addr):
+                        p = Pointer(afo(self, o), o, addr, ofa(self, addr), m)
+                        dss = self.data_structures.get(p.d_address)
+                        if dss != None:
+                            m.pointers.append(p)
+                            self.memory_graph.add_edge(m, dss, label=p.offset - m.offset)
+                self.g_pointers.extend(m.pointers)    
 
 
     def __find_data_structure_pointers(self):
@@ -166,14 +164,15 @@ class MemoryDump:
         Finds the pointers in all the data structures in the memory dump.
         '''
         for dss in self.data_structures.values():
-            for o in xrange(dss.offset, dss.offset + dss.size, _WORD_SZ_):
-                addr = struct.unpack('<I', self.data[o:o + _WORD_SZ_])[0]
-                if self.__is_candidate_pointers(addr):
-                    p = Pointer(afo(self, o), o, addr, ofa(self, addr), dss)
-                    ds2 = self.data_structures.get(p.d_address)
-                    if ds2 != None:
-                        dss.pointers.append(p)
-                        self.memory_graph.add_edge(dss, ds2, label=p.offset - dss.offset)
+            if dss.size >= _WORD_SZ_:                               #minimun size is the WORD size
+                for o in xrange(dss.offset, dss.offset + dss.size, _WORD_SZ_):
+                    addr = struct.unpack('<I', self.data[o:o + _WORD_SZ_])[0]
+                    if self.__is_candidate_pointers(addr):
+                        p = Pointer(afo(self, o), o, addr, ofa(self, addr), dss)
+                        ds2 = self.data_structures.get(p.d_address)
+                        if ds2 != None:
+                            dss.pointers.append(p)
+                            self.memory_graph.add_edge(dss, ds2, label=p.offset - dss.offset)
 
 
     def __remove_unreachable(self):
@@ -182,7 +181,6 @@ class MemoryDump:
         '''
         for dss in self.data_structures.copy().values():
             for m in self.modules:
-#            for m in self.g_pointers:
                 if nx.has_path(self.memory_graph, m, dss):
                     break
             else:
@@ -235,16 +233,36 @@ class MemoryDump:
         return data
 
 
+    def find_pointers_to_address(self, address):
+        addresses = list()
+        for i in xrange(0, self.size, _WORD_SZ_):
+            word = struct.unpack('I', self.data[i:i + _WORD_SZ_])[0]
+            if address == word:
+                addresses.append(afo(self, i))
+        return addresses
+
+
 if __name__ == '__main__':
-    import MemoryDumpReader
-    import sys
+    import reader
+    import argparse
+    import services
+    
+    parser = argparse.ArgumentParser(description='Performs operations over memory dumps.')    
+    parser.add_argument(dest='dump', metavar='dump', help='memory dump file.')    
+    parser.add_argument('-o', dest='offset1' , metavar='offset', help='offset to convert to virtual address.')
+    parser.add_argument('-f', dest='offset2', metavar='offset', help='offset to find pointers.')
+    args = parser.parse_args()
 
-    filename = sys.argv[1]
-    print('Loading memory dump', filename)
-
-    memory_dump = MemoryDumpReader.read_memory_dump(filename)
-    memory_dump.build_memory_graph()
-    MemoryDumpServices.export_memory_graph(memory_dump)
-    #MemoryDumpServices.draw_memory_graph(memory_dump)
-
-
+    md = reader.read_memory_dump(args.dump)
+    md.build_memory_graph()
+    services.export_memory_graph(md)
+    #services.draw_memory_graph(md)
+    
+    if args.offset1 != None:
+        print("offset {} corresponds to v-address 0x{:x}".format(args.offset1, services.address_from_offset(md, int(args.offset1, 16))))
+    
+    if args.offset2 != None:
+        pointers = md.find_pointers_to_address(services.address_from_offset(md, int(args.offset2, 16)))        
+        for a in pointers:
+            print('0x{:x}'.format(a))
+        

@@ -1,0 +1,5 @@
+#!/bin/bash
+
+python src/data_structure_dumping.py $1 $2
+xxd -c 16 "$2-$1.core" "$2-$1.core.hex"
+less $2-$1.core.hex

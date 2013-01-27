@@ -4,8 +4,7 @@ Created on Oct 3, 2012
 @author: David I. Urbina
 '''
 from __future__ import print_function
-import MemoryDumpReader
-import MemoryDumpServices
+import reader
 import argparse
 import networkx as nx
 
@@ -49,7 +48,7 @@ if __name__ == '__main__':
     parser.add_argument(dest='dump', metavar='dump', help='memory dump file.')
     args = parser.parse_args()
     
-    md = MemoryDumpReader.read_memory_dump(args.dump)    
+    md = reader.read_memory_dump(args.dump)    
     md.build_memory_graph()
     
     ds = None

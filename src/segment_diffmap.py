@@ -4,9 +4,9 @@ Created on Dec 13, 2012
 @author: David I. Urbina
 '''
 from __future__ import print_function
-import MemoryDumpDiffing
-import MemoryDumpReader
-import MemoryDumpValueFindding
+import diffing
+import reader
+import value_findding
 import argparse
 
 if __name__ == '__main__':
@@ -16,7 +16,7 @@ if __name__ == '__main__':
     parser.add_argument('-r', dest='dump', metavar='dump', help='memory dump to remove.')    
     args = parser.parse_args()
 
-    memory_dumps = [MemoryDumpReader.read_memory_dump(f) for f in args.dumps]
+    memory_dumps = [reader.read_memory_dump(f) for f in args.dumps]
     
     for md in memory_dumps:
         md.build_memory_graph()
@@ -31,10 +31,10 @@ if __name__ == '__main__':
     if len(dss) == 0:
         dss = [md.data_structures[int(args.address, 16)] for md in memory_dumps]
 
-    offsets1 = MemoryDumpDiffing.diff_memory_segments(dss)
+    offsets1 = diffing.diff_memory_segments(dss)
     
     if args.dump != None:
-        dump = MemoryDumpReader.read_memory_dump(args.dump)
+        dump = reader.read_memory_dump(args.dump)
         dump.build_memory_graph()
         dss2 = list()
         for m in memory_dumps[-1].modules:
@@ -47,7 +47,7 @@ if __name__ == '__main__':
                 break        
         if len(dss2) == 0:
             dss2 = [memory_dumps[-1].data_structures[int(args.address, 16)], dump.data_structures[int(args.address, 16)]]                
-        offsets2 = MemoryDumpDiffing.diff_memory_segments(dss2)
+        offsets2 = diffing.diff_memory_segments(dss2)
         offsets1 = offsets1 - offsets2
     
     print("Different offsets:", len(offsets1))
@@ -56,8 +56,8 @@ if __name__ == '__main__':
         #print('Offset:', o)
         #for (md, ds) in zip(memory_dumps, dss):
             #print('\t', md.name, '-', '0x{:x}'.format(ds.address))
-            #for (t, v) in MemoryDumpValueFindding.get_possible_values(ds, o):
+            #for (t, v) in value_findding.get_possible_values(ds, o):
                 #print('\t\t{:7} {}'.format(t, v))
 
-    MemoryDumpDiffing.draw_segments_diffing(dss, offsets1)
+    diffing.draw_segments_diffing(dss, offsets1)
 

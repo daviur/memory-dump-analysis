@@ -5,7 +5,7 @@ Created on Nov 26, 2012
 @author: David I. Urbina
 '''
 from __future__ import print_function
-from Minidump import *
+from minidump import *
 import argparse
 
 
@@ -42,8 +42,8 @@ def extract_modules(filename, minidump, all_mod):
             print('Extracting modules...', end=' ')
             with open(filename.replace('dmp', 'modules'), 'w') as f:
                 for m in s.DirectoryData.MINIDUMP_MODULE:
-                    if not all_mod and is_standard_module(m.ModuleName):
-                        continue
+                    #if not all_mod and is_standard_module(m.ModuleName):
+                        #continue
                     name = m.ModuleName.split('\\')[-1]
                     value = '{:x}:{:x}:{}\n'.format(m.BaseOfImage, m.SizeOfImage, name)
                     f.write(value)
