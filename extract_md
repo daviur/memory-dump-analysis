@@ -2,3 +2,4 @@
 
 find -name $1"*.dmp" -exec python src/minidump_parser.py -msc {} \;
 find -name $1"*.txt" -exec ./extract_heaps {} \;
+find -name $1"*.txt" -exec ./extract_private_data {} \;
