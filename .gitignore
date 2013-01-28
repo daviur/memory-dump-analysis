@@ -9,5 +9,6 @@ memory-dump-analysis.wpu
 *.cache
 *.dot
 *.pdf
+*.pdata
 *~
 test-dumps/
