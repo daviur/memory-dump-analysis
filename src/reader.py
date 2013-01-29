@@ -11,6 +11,7 @@ class SegmentType:
     Segment = 1
     Heap = 2
     Module = 3
+    Pdata = 4
 
 
 def read_memory_dump(filename):
@@ -23,6 +24,8 @@ def read_memory_dump(filename):
     __calculate_segments_offsets(md, md.modules)
     md.heaps = __read_segments(SegmentType.Heap, filename + '.heaps', md.data)
     __calculate_segments_offsets(md, md.heaps)
+    md.pdata = __read_segments(SegmentType.Pdata, filename + '.pdata', md.data)
+    __calculate_segments_offsets(md. md.pdata)
     return CacheDecorator(md)
 
 
@@ -50,6 +53,8 @@ def __read_segments(type, filename, data):
                 segments.append(Module(int(line.split(':')[0], 16), int(line.split(':')[1], 16), line.split(':')[2].rstrip(), data))
             elif type == SegmentType.Heap:
                 segments.append(Segment(int(line.split()[0], 16), int(line.split()[5].replace(',', '')) * 1024, data))
+            elif type == SegmentType.Pdata:
+                segments.append(Segment(int(line.split()[0], 16), int(line.split()[3].replace(',', '')) * 1024, data))
             else:
                 segments.append(Segment(int(line.split(':')[0], 16), int(line.split(':')[1], 16), data))
     return segments
