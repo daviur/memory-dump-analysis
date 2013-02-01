@@ -8,6 +8,24 @@ from __future__ import print_function
 from minidump import *
 import argparse
 
+#Modules to exclude
+_STDLIB_EXC_ = ['rpcrt4.dll', 'ole32.dll', 'advapi32.dll', 'user32.dll', 'comctl32.dll', 
+                'winmm.dll', 'secur32.dll', 'gdi32.dll', 'gdiplus.dll', 'wininet.dll', 
+                'crypt32.dll', 'msasn1.dll', 'oleaut32.dll', 'shlwapi.dll', 'comdlg32.dll', 
+                'shell32.dll', 'winspool.drv', 'oledlg.dll', 'version.dll', 'riched32.dll', 
+                'riched20.dll', 'rsaenh.dll', 'clbcatq.dll', 'comres.dll', 'shdocvw.dll', 
+                'cryptui.dll', 'netapi32.dll', 'wintrust.dll', 'imagehlp.dll', 'wldap32.dll', 
+                'uxtheme.dll', 'xpsp2res.dll', 'wtsapi32.dll', 'winsta.dll', 'imm32.dll',
+                'msimg32.dll', 'apphelp.dll', 'ws2_32.dll', 'ws2help.dll', 'urlmon.dll', 
+                'setupapi.dll', 'msacm32.dll', 'sensapi.dll', 'oleacc.dll', 'iphlpapi.dll',
+                'wsock32.dll', 'msls31.dl', 'psapi.dll', 'sxs.dll', 'mlang.dll', 'simtf.dll',
+                'rasapi32.dll', 'rasman.dll', 'tapi32.dll', 'rtutils.dll', 'shdoclc.dll',
+                'jscript.dll', 'mswsock.dll', 'hnetcfg.dll', 'wshtcpip.dll', 'dnsapi.dll',
+                'winrnr.dll', 'rasadhlp.dll', 'schannel.dll', 'userenv.dll', 'dssenh.dll',
+                'perfos.dll', 'wdmaud.drv', 'msacm32.drv', 'midimap.dll',
+                'kernel32.dll', 'msvcrt.dll', 'ntdll.dll', 'mshtml.dll', 'msctf.dll']
+#Modules to include
+_STDLIB_INCL_   = ['kernel32.dll', 'msvcrt.dll', 'ntdll.dll', 'mshtml.dll', 'msctf.dll']
 
 def extract_memory(filename, minidump):
     with open(filename, 'rb') as f:
@@ -32,8 +50,6 @@ def extract_segments(filename, minidump):
             return
 
 
-def is_standard_module(name):
-    return 'windows' in name.lower()
 
 
 def extract_modules(filename, minidump, all_mod):
@@ -42,8 +58,8 @@ def extract_modules(filename, minidump, all_mod):
             print('Extracting modules...', end=' ')
             with open(filename.replace('dmp', 'modules'), 'w') as f:
                 for m in s.DirectoryData.MINIDUMP_MODULE:
-                    #if not all_mod and is_standard_module(m.ModuleName):
-                        #continue
+                    if not all_mod and any(x in m.ModuleName.lower() for x in _STDLIB_EXC_):
+                        continue
                     name = m.ModuleName.split('\\')[-1]
                     value = '{:x}:{:x}:{}\n'.format(m.BaseOfImage, m.SizeOfImage, name)
                     f.write(value)

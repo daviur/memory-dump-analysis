@@ -41,6 +41,7 @@ class CacheDecorator:
         self.size = self.decorated.size
         self.name = self.decorated.name
         self.data = self.decorated.data
+        self.pdata = self.decorated.pdata
         self.modules = self.decorated.modules
         self.g_pointers = decorated.g_pointers
         self.data_structures = decorated.data_structures
@@ -113,14 +114,27 @@ class MemoryDump:
                     self.__parse_heap_entries(feo)
 
 
+    def __is_in_segment(self, word, segments):
+        '''
+        Determines if a word is pointing to a segment.
+        '''
+        for s in segments:
+            if s.address <= word < s.address + s.size:
+                return True
+        return False            
+
+
     def __is_in_heaps(self, word):
         '''
         Determines if a word is pointing to a heap.
         '''
-        for h in self.heaps:
-            if h.address <= word < h.address + h.size:
-                return True
-        return False
+        return self.__is_in_segment(word, self.heaps)
+
+    def __is_in_private_data(self, word):
+        '''
+        Determines if a word is pointing to a private data segment.
+        '''
+        return self.__is_in_segment(word, self.pdata) 
 
 
     def __is_in_heaps_offset(self, offset):
@@ -137,13 +151,15 @@ class MemoryDump:
         '''
         verifies if "addr" can be a valid pointer to data structure.
         '''
-        return addr % _WORD_SZ_ == 0 and self.__is_in_heaps(addr)
+        #return addr % _WORD_SZ_ == 0 and self.__is_in_heaps(addr)
+        return addr % _WORD_SZ_ == 0 and (self.__is_in_heaps(addr) or self.__is_in_private_data(addr))
 
 
     def __find_global_pointers(self):
         '''
         Finds the list of global pointers making use of the global ranges.
         '''
+        count = 0
         self.g_pointers = list()
         for m in self.modules:
             self.memory_graph.add_node(m, color='turquoise', style='filled')
@@ -154,15 +170,18 @@ class MemoryDump:
                         p = Pointer(afo(self, o), o, addr, ofa(self, addr), m)
                         dss = self.data_structures.get(p.d_address)
                         if dss != None:
+                            count += 1
                             m.pointers.append(p)
                             self.memory_graph.add_edge(m, dss, label=p.offset - m.offset)
                 self.g_pointers.extend(m.pointers)    
+        return count
 
 
     def __find_data_structure_pointers(self):
         '''
         Finds the pointers in all the data structures in the memory dump.
         '''
+        count = 0
         for dss in self.data_structures.values():
             if dss.size >= _WORD_SZ_:                               #minimun size is the WORD size
                 for o in xrange(dss.offset, dss.offset + dss.size, _WORD_SZ_):
@@ -171,8 +190,10 @@ class MemoryDump:
                         p = Pointer(afo(self, o), o, addr, ofa(self, addr), dss)
                         ds2 = self.data_structures.get(p.d_address)
                         if ds2 != None:
+                            count += 1
                             dss.pointers.append(p)
                             self.memory_graph.add_edge(dss, ds2, label=p.offset - dss.offset)
+        return count
 
 
     def __remove_unreachable(self):
@@ -188,16 +209,24 @@ class MemoryDump:
                 del self.data_structures[dss.address]
 
 
+    def __add_private_data(self):
+        for p in self.pdata:            
+            self.memory_graph.add_node(p, color='orchid', style='filled')
+            self.data_structures[p.address] = p
+
+
     def build_memory_graph(self):
         '''
         Builds the memory graph associated with this memory dump.
         '''
         self.__parse_heap_data_structures()
         print('Candidate data structures:', len(self.data_structures))
-        self.__find_global_pointers()
-        print('Candidate global pointers:', len(self.g_pointers))
-        self.__find_data_structure_pointers()
-        print("Data structures's pointers found")
+        self.__add_private_data()
+        print('Private data added')
+        count = self.__find_global_pointers()
+        print('Candidate global pointers:', count)
+        count = self.__find_data_structure_pointers()
+        print("Data structures's pointers:", count)
         self.__remove_unreachable()
         print('Reachabel data structures:', len(self.data_structures))
         return self.memory_graph

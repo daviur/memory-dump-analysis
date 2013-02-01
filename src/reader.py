@@ -3,6 +3,7 @@ Created on Aug 6, 2012
 
 @author: David I. Urbina
 '''
+from __future__ import print_function
 from memorydump import MemoryDump, CacheDecorator
 from parts import Segment, Module
 import services
@@ -25,7 +26,7 @@ def read_memory_dump(filename):
     md.heaps = __read_segments(SegmentType.Heap, filename + '.heaps', md.data)
     __calculate_segments_offsets(md, md.heaps)
     md.pdata = __read_segments(SegmentType.Pdata, filename + '.pdata', md.data)
-    __calculate_segments_offsets(md. md.pdata)
+    __calculate_segments_offsets(md, md.pdata)
     return CacheDecorator(md)
 
 
@@ -50,13 +51,13 @@ def __read_segments(type, filename, data):
         segments = list()
         for line in f:
             if type == SegmentType.Module:
-                segments.append(Module(int(line.split(':')[0], 16), int(line.split(':')[1], 16), line.split(':')[2].rstrip(), data))
+                segments.append(Module(int(line.split(':')[0], 16), int(line.split(':')[1], 16), line.split(':')[2].rstrip(), data=data))
             elif type == SegmentType.Heap:
-                segments.append(Segment(int(line.split()[0], 16), int(line.split()[5].replace(',', '')) * 1024, data))
+                segments.append(Segment(int(line.split()[0], 16), int(line.split()[5].replace(',', '')) * 1024, data=data))
             elif type == SegmentType.Pdata:
-                segments.append(Segment(int(line.split()[0], 16), int(line.split()[3].replace(',', '')) * 1024, data))
+                segments.append(Segment(int(line.split()[0], 16), int(line.split()[4].replace(',', '')) * 1024, data=data))
             else:
-                segments.append(Segment(int(line.split(':')[0], 16), int(line.split(':')[1], 16), data))
+                segments.append(Segment(int(line.split(':')[0], 16), int(line.split(':')[1], 16), data=data))
     return segments
 
 

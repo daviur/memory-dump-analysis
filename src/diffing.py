@@ -86,7 +86,7 @@ def diff_memory_graphs(memory_dumps):
         differences.append(diff_pair_memory_graphs(memory_dumps[i], memory_dumps[i + 1]))
 
     if len(differences) == 1:
-        __draw_graph_diffing(memory_dumps[0], memory_dumps[1], differences[0])
+        #__draw_graph_diffing(memory_dumps[0], memory_dumps[1], differences[0])
         return (differences[0][1], differences[0][2], differences[0][3])
     else:
         keyedsets1 = list()
@@ -127,11 +127,15 @@ def export_memory_graph_intersection(memory_dumps, intersection):
             graph.remove_node(n)
 
     for n in graph.nodes():
-        graph.node[n]['color'] = 'turquoise'
+        graph.node[n]['color'] = 'turquoise'    
     for n in intersection[0]:
         graph.node[n]['color'] = 'red'
+        if n in memory_dumps[-1].pdata:
+            graph.node[n]['color'] = 'deeppink'
     for n in intersection[2]:
         graph.node[n]['color'] = 'green'
+        if n in memory_dumps[-1].pdata:
+            graph.node[n]['color'] = 'greenyellow'        
     nx.write_dot(graph, '-'.join((n.name for n in memory_dumps)) + '.dot')
 
 
