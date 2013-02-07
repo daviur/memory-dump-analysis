@@ -5,7 +5,7 @@ Created on Aug 6, 2012
 '''
 from __future__ import print_function
 from memorydump import MemoryDump, CacheDecorator
-from parts import Segment, Module
+from parts import Segment, Module, PrivateData
 import services
 
 class SegmentType:
@@ -55,7 +55,7 @@ def __read_segments(type, filename, data):
             elif type == SegmentType.Heap:
                 segments.append(Segment(int(line.split()[0], 16), int(line.split()[5].replace(',', '')) * 1024, data=data))
             elif type == SegmentType.Pdata:
-                segments.append(Segment(int(line.split()[0], 16), int(line.split()[4].replace(',', '')) * 1024, data=data))
+                segments.append(PrivateData(int(line.split()[0], 16), int(line.split()[4].replace(',', '')) * 1024, data=data))
             else:
                 segments.append(Segment(int(line.split(':')[0], 16), int(line.split(':')[1], 16), data=data))
     return segments

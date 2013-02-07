@@ -119,12 +119,24 @@ def diff_memory_graphs(memory_dumps):
 def export_memory_graph_intersection(memory_dumps, intersection):
     graph = memory_dumps[-1].memory_graph.copy()
 
-    for n in graph.nodes()[:]:
+    nodes = set()
+    for m in memory_dumps[-1].modules:
         for i in intersection[0] | intersection[2]:
-            if nx.has_path(graph, n, i):
-                break
-        else:
+            try:
+                nodes.update(nx.shortest_path(graph, m, i))
+            except:
+                pass
+    
+    for n in graph.nodes()[:]:
+        if n not in nodes:
             graph.remove_node(n)
+
+    #for n in graph.nodes()[:]:
+        #for i in intersection[0] | intersection[2]:
+            #if nx.has_path(graph, n, i):
+                #break
+        #else:        
+            #graph.remove_node(n)
 
     for n in graph.nodes():
         graph.node[n]['color'] = 'turquoise'    

@@ -4,7 +4,7 @@ Created on Aug 6, 2012
 @author: David I. Urbina
 '''
 from __future__ import print_function
-from parts import DataStructure, Pointer
+from parts import DataStructure, Pointer, PrivateData
 import services
 import math
 import networkx as nx
@@ -180,10 +180,13 @@ class MemoryDump:
     def __find_data_structure_pointers(self):
         '''
         Finds the pointers in all the data structures in the memory dump.
+        Currently only for HEAP data structures.
         '''
         count = 0
-        for dss in self.data_structures.values():
-            if dss.size >= _WORD_SZ_:                               #minimun size is the WORD size
+        for dss in self.data_structures.values():            
+            #minimun size is the WORD size
+            #exclude Private Data segments
+            if dss.size >= _WORD_SZ_ and not isinstance(dss, PrivateData):    
                 for o in xrange(dss.offset, dss.offset + dss.size, _WORD_SZ_):
                     addr = struct.unpack('<I', self.data[o:o + _WORD_SZ_])[0]
                     if self.__is_candidate_pointers(addr):

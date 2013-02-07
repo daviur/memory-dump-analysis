@@ -3,6 +3,8 @@ Created on Aug 6, 2012
 
 @author: David I. Urbina
 '''
+import re
+
 class Segment:
     '''
     Describes a section of the core dump file.
@@ -17,6 +19,15 @@ class Segment:
         self.data = data
         self.pointers = list()
         self.hash = None
+
+    
+    def string_offset(self, string):        
+        pattern = re.compile(string)
+        offsets = list()
+        for i in xrange(self.offset, self.offset + self.size - len(string)):
+            if pattern.search(self.data[i:i + len(string)]) != None:
+                offsets.append(i - self.offset)
+        return offsets
 
 
     def __repr__(self):
@@ -37,6 +48,19 @@ class Segment:
             self.hash = hash(repr(self.address) + repr(self.size) + repr(self.data[self.offset: self.offset + self.size]))
         return  self.hash
 
+
+class PrivateData(Segment):
+    '''
+    Private Data segment.
+    '''
+    def __repr__(self):
+        address = '{:x}'.format(self.address).zfill(8)
+        return '<pd a=' + address + ' s=' + repr(self.size) + ' o=' + repr(self.offset) + '>'
+    
+    
+    def __str__(self):
+        return 'Private Data 0x{:x}({})'.format(self.address, self.size)    
+    
 
 class Module(Segment):
     '''
@@ -101,3 +125,26 @@ class Pointer(Segment):
             self.hash = hash(repr(self.address) + repr(self.offset) + repr(self.d_address) + repr(self.d_offset))
         return self.hash
 
+
+class ReferecePath:
+    '''
+    Represents a reference path in a memory graph.    
+    '''
+    def __init__(self, name, offset=None, rpath=None):
+        self.name = name        
+        self.offset = offset
+        self.rpath = rpath
+        
+        
+    def __str__(self):        
+        string = self.name
+        if self.offset != None:
+            string += '[{}]'.format(self.offset)
+        if self.rpath != None:
+            string += '->{}'.format(str(self.rpath))
+        return string
+        
+        
+    def __repr__(self):
+        return '<rp name={} offset={} rpath={}>'.format(self.name, self.offset, repr(self.rpath))
+    
