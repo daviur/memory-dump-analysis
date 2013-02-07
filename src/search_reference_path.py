@@ -1,3 +1,4 @@
+#!/usr/bin/python
 '''
 Created on Oct 3, 2012
 
@@ -81,7 +82,7 @@ if __name__ == '__main__':
 		print('{} paths to data structure 0x{:x}'.format(len(rps), int(args.address, 16)))
 	# Search bye string value
 	elif args.string != None:
-		rps = by_string(md.memory_graph, args.string)
+		rps = by_string(md, args.string)
 		print('{} paths to string {}'.format(len(rps), args.string))
 
 	for p in sorted(rps, cmp=lambda x, y: cmp(x.name, y.name)):

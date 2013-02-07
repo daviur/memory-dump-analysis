@@ -1,3 +1,4 @@
+#!/usr/bin/python
 '''
 Created on Nov 29, 2012
 
@@ -130,13 +131,6 @@ def export_memory_graph_intersection(memory_dumps, intersection):
 	for n in graph.nodes()[:]:
 		if n not in nodes:
 			graph.remove_node(n)
-
-	# for n in graph.nodes()[:]:
-		# for i in intersection[0] | intersection[2]:
-			# if nx.has_path(graph, n, i):
-				# break
-		# else:
-			# graph.remove_node(n)
 
 	for n in graph.nodes():
 		graph.node[n]['color'] = 'turquoise'
