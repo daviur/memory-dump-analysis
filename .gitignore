@@ -12,3 +12,4 @@ memory-dump-analysis.wpu
 *.pdata
 *~
 test-dumps/
+.settings/
