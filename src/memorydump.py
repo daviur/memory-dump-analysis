@@ -172,9 +172,9 @@ class MemoryDump:
 						dss = self.data_structures.get(p.d_address)
 						if dss != None:
 							count += 1
-							m.pointers.append(p)
+							m.pointers[p.offset - m.offset] = p
 							self.memory_graph.add_edge(m, dss, label=p.offset - m.offset)
-				self.g_pointers.extend(m.pointers)
+				self.g_pointers.extend(m.pointers.values())
 		return count
 
 
@@ -195,7 +195,7 @@ class MemoryDump:
 						ds2 = self.data_structures.get(p.d_address)
 						if ds2 != None:
 							count += 1
-							dss.pointers.append(p)
+							dss.pointers[p.offset - dss.offset] = p
 							self.memory_graph.add_edge(dss, ds2, label=p.offset - dss.offset)
 		return count
 
