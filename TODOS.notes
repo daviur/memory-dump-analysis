@@ -1,8 +1,0 @@
-* TODOs
-** Generate reference paths resulting from intersection.
-
-** Develop a c++ program to read and write references paths.
-Parsing a reference path (100%).
-Reading a reference path (100%).
-Writing a reference path with a particular encoding and value (100%).
-

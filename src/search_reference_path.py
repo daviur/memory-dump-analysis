@@ -5,18 +5,20 @@ Created on Oct 3, 2012
 @author: David I. Urbina
 '''
 from __future__ import print_function
-from parts import ReferecePath, PrivateData
+from parts import PrivateData, ReferencePath
 import networkx as nx
 import reader
 
 search_paths = nx.all_shortest_paths
 
-def __build_reference_paths(graph, paths, offset=None):
+def __build_reference_paths(G, paths, offset=None, data=None):
 	rps = list()
 	for p in paths:
-		rp = ReferecePath(str(p[-1]), offset=offset)
-		for i in xrange(len(p) - 1, 0, -1):
-			rp = ReferecePath(str(p[i - 1]), offset=graph[p[i - 1]][p[i]]['label'], rpath=rp)
+		rp = ReferencePath(p[0])
+		for i in xrange(len(p) - 1):
+			rp.add_edge(p[i], p[i + 1], label=G[p[i]][p[i + 1]]['label'])
+		if offset != None and data != None:
+			rp.add_edge(p[-1], data, label=offset)
 		rps.append(rp)
 	return rps
 
@@ -36,7 +38,7 @@ def by_string(memory_dump, string):
 					shortest_paths.extend(search_paths(G, m, n))
 				except nx.NetworkXNoPath:
 					continue
-			rps.extend(__build_reference_paths(G, shortest_paths, o))
+			rps.extend(__build_reference_paths(G, shortest_paths, o, string))
 	return rps
 
 
@@ -85,5 +87,9 @@ if __name__ == '__main__':
 		rps = by_string(md, args.string)
 		print('{} paths to string {}'.format(len(rps), args.string))
 
-	for p in sorted(rps, cmp=lambda x, y: cmp(x.name, y.name)):
-		print(p)
+	for i in xrange(len(rps)):
+		print(rps[i])
+		nx.write_dot(rps[i], '{}-rp{}.dot'.format(md.name, i))
+		nrp = rps[i].normalize()
+		nx.write_dot(nrp, '{}-nrp{}.dot'.format(md.name, i))
+

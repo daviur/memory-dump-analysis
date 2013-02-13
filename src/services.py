@@ -59,3 +59,10 @@ def draw_memory_graph(memory_dump):
 	plt.axis('off')
 	plt.savefig(memory_dump.name + '_memory_graph.png')
 	plt.show()
+
+
+def get_all_the_letters(begin='A', end='Z'):
+	beginNum = ord(begin)
+	endNum = ord(end)
+	for number in xrange(beginNum, endNum + 1):
+		yield chr(number)

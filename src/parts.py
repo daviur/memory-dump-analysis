@@ -3,7 +3,10 @@ Created on Aug 6, 2012
 
 @author: David I. Urbina
 '''
+from collections import OrderedDict
+import networkx as nx
 import re
+import services
 
 class Segment:
 	'''
@@ -17,7 +20,7 @@ class Segment:
 		self.size = size
 		self.offset = offset
 		self.data = data
-		self.pointers = list()
+		self.pointers = OrderedDict()
 		self.hash = None
 
 
@@ -126,24 +129,52 @@ class Pointer(Segment):
 		return self.hash
 
 
-class ReferecePath:
+class ReferencePath(nx.DiGraph):
 	'''
-	Represents a reference path in a memory graph.	
+	Represents a reference path in memory.
 	'''
-	def __init__(self, name, offset=None, rpath=None):
-		self.name = name
-		self.offset = offset
-		self.rpath = rpath
+	def __init__(self, root):
+		self.root = root
+		nx.DiGraph.__init__(self)
 
 
-	def __str__(self):
-		string = self.name
-		if self.offset != None:
-			string += '[{}]'.format(self.offset)
-		if self.rpath != None:
-			string += '->{}'.format(str(self.rpath))
+	def __print_node(self, node):
+		string = '{}'.format(node)
+		suc = self.successors(node)
+		if len(suc) > 0:
+			string += '[{}]->'.format(self.get_edge_data(node, suc[0])['label'])
+			return string + self.__print_node(suc[0])
 		return string
 
 
+	def __str__(self):
+		return self.__print_node(self.root)
+
+
 	def __repr__(self):
-		return '<rp name={} offset={} rpath={}>'.format(self.name, self.offset, repr(self.rpath))
+		return self.__str__()
+
+
+	def normalize(self):
+		out_node = self.root
+		rp = nx.DiGraph()
+		in_node = self.successors(out_node)
+		out_name = '{}({})'.format(out_node.name, out_node.size)
+		rp.add_node(out_name)
+		num_node = 0
+		gen = services.get_all_the_letters()
+		while len(in_node) > 0:
+			if not isinstance(in_node[0], DataStructure):
+				break
+			offset = self.get_edge_data(out_node, in_node[0])['label']
+			if out_node.size == in_node[0].size:  # TODO: add shape analysis
+	# 			if out_node.pointers.keys() == in_node[0].pointers.keys():
+				rp.add_edge(out_name, out_name, label=offset)
+			else:
+				num_node += 1
+				in_name = '{}({})'.format(next(gen), in_node[0].size)
+				rp.add_edge(out_name, in_name, label=offset)
+				out_name = in_name
+			out_node = in_node[0]
+			in_node = self.successors(out_node)
+		return rp
