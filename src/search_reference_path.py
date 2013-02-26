@@ -23,7 +23,7 @@ def __build_reference_paths(G, paths, offset=None, data=None):
 	return rps
 
 
-def by_string(memory_dump, string):
+def by_string(memory_dump, ascii):
 	G = memory_dump.memory_graph
 
 	rps = list()
@@ -31,14 +31,14 @@ def by_string(memory_dump, string):
 		# Avoid Private Data
 		if isinstance(n, PrivateData):
 			continue
-		for o in n.string_offset(string):
+		for o in n.string_offset(ascii):
 			shortest_paths = list()
 			for m in md.modules:
 				try:
 					shortest_paths.extend(search_paths(G, m, n))
 				except nx.NetworkXNoPath:
 					continue
-			rps.extend(__build_reference_paths(G, shortest_paths, o, string))
+			rps.extend(__build_reference_paths(G, shortest_paths, o, ascii))
 	return rps
 
 
@@ -68,7 +68,8 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='List the possible reference paths to the specified data structure in a memory dump. The data structure may be specified by its value or by its address. By default it search for shortest reference paths.')
 	parser.add_argument(dest='dump', metavar='dump', help='memory dump file.')
 	parser.add_argument('-a', dest='address' , metavar='address', help='address of the data structure.')
-	parser.add_argument('-s', dest='string', metavar='string', help='string value to search for.')
+	parser.add_argument('-s', dest='ascii', metavar='ascii', help='ASCII ascii value to search for.')
+	parser.add_argument('-u', dest='unicode', metavar='unicode', help='Unicode ascii value to search for.')
 	parser.add_argument('--All', dest='all', action='store_true', help='search for all simple paths. It may take a long time.')
 	args = parser.parse_args()
 
@@ -82,14 +83,15 @@ if __name__ == '__main__':
 	if args.address != None:
 		rps = by_address(md, int(args.address, 16))
 		print('{} paths to data structure 0x{:x}'.format(len(rps), int(args.address, 16)))
-	# Search bye string value
-	elif args.string != None:
-		rps = by_string(md, args.string)
-		print('{} paths to string {}'.format(len(rps), args.string))
+	# Search bye ascii value
+	elif args.ascii != None:
+		rps = by_string(md, args.ascii)
+		print('{} paths to the ASCII string {}'.format(len(rps), args.ascii))
+	elif args.unicode != None:
+		rps = by_string(md, args.unicode.encode('utf16'))
+		print('{} paths to the Unicode string {}'.format(len(rps), args.unicode))
 
-	for i in xrange(len(rps)):
-		print(rps[i])
-		nx.write_dot(rps[i], '{}-rp{}.dot'.format(md.name, i))
-		nrp = rps[i].normalize()
-		nx.write_dot(nrp, '{}-nrp{}.dot'.format(md.name, i))
+	for i, rp in zip(xrange(len(rps)), sorted(rps, key=lambda rp: str(rp.root))):
+		print(i, '-', rp)
+ 		nx.write_dot(rps[i].normalize(), '{}-nrp{}.dot'.format(md.name, i))
 

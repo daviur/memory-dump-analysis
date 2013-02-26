@@ -225,8 +225,8 @@ class MemoryDump:
 		'''
 		self.__parse_heap_data_structures()
 		print('Candidate data structures:', len(self.data_structures))
-		self.__add_private_data()
-		print('Private data added')
+# 		self.__add_private_data()
+# 		print('Private data added')
 		count = self.__find_global_pointers()
 		print('Candidate global pointers:', count)
 		count = self.__find_data_structure_pointers()

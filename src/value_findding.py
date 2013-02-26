@@ -49,7 +49,7 @@ def get_possible_values(segment, offset):
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='Search for values in the intersection of memory dumps.')
-	parser.add_argument('-m', required=True, dest='dumps' , nargs='+', metavar='memorydumps', help='memory dump files.')
+	parser.add_argument('-d', required=True, dest='dumps' , nargs='+', metavar='memorydumps', help='memory dump files.')
 	parser.add_argument('-v', required=True, dest='values', nargs='+', metavar='values', help='value corresponding to each memory dump.')
 	args = parser.parse_args()
 
@@ -63,3 +63,5 @@ if __name__ == '__main__':
 			print('0x{:x}'.format(services.address_from_offset(memory_dumps[0], o)), t)
 	else:
 		intersection = diffing.diff_memory_segments(memory_dumps)
+
+		print('TODO: finish intersection by value')
