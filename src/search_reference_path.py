@@ -93,5 +93,5 @@ if __name__ == '__main__':
 
 	for i, rp in zip(xrange(len(rps)), sorted(rps, key=lambda rp: str(rp.root))):
 		print(i, '-', rp)
- 		nx.write_dot(rps[i].normalize(), '{}-nrp{}.dot'.format(md.name, i))
+		nx.write_dot(rps[i].normalize(), '{}-nrp{}.dot'.format(md.name, i))
 

@@ -135,7 +135,6 @@ class ReferencePath(nx.DiGraph):
 	'''
 	def __init__(self, root):
 		self.root = root
-		self.root_name = str(root)
 		nx.DiGraph.__init__(self)
 
 
