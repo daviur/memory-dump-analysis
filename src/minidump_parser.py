@@ -5,7 +5,7 @@ Created on Nov 26, 2012
 @author: David I. Urbina
 '''
 from __future__ import print_function
-from minidump import *
+from minidump_scanning.minidump import *
 import argparse
 
 # Modules to exclude
@@ -28,6 +28,7 @@ _STDLIB_EXC_ = ['rpcrt4.dll', 'ole32.dll', 'advapi32.dll', 'user32.dll', 'comctl
 # Modules to include
 _STDLIB_INCL_ = ['kernel32.dll', 'msvcrt.dll', 'ntdll.dll', 'mshtml.dll', 'msctf.dll']
 
+#
 def extract_memory(filename, minidump):
 	with open(filename, 'rb') as f:
 		for s in minidump.MINIDUMP_DIRECTORY.value:
