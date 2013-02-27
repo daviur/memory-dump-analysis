@@ -1,5 +1,9 @@
 #!/bin/bash
 
-python src/data_structure_dumping.py $1 $2
-xxd -c 16 "$2-$1.core" "$2-$1.core.hex"
+python src/data_structure_dumping.py $1 $2 $3
+if [ "$3" == "" ]; then
+    xxd "$2-$1.core" "$2-$1.core.hex"
+else
+    xxd -c $3 "$2-$1.core" "$2-$1.core.hex"
+fi
 less $2-$1.core.hex
