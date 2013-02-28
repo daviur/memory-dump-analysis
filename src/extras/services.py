@@ -6,6 +6,7 @@ Created on Dec 3, 2012
 import matplotlib.pyplot as plt
 import networkx as nx
 
+
 def print_collection(collection):
 	for i in collection:
 		print(repr(i))
