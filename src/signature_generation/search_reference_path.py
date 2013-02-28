@@ -43,9 +43,9 @@ def by_string(memory_dump, ascii):
 
 
 def by_address(memory_dump, address):
-	# Check if address corresponds to a module
+	# Address corresponds to a module?
 	ds = next((m for m in memory_dump.modules if m.address == address), None)
-	# if not, check if it corresponds to a data structure
+	# if not, does it correspond to a data structure?
 	if ds == None:
 		ds = md.data_structures.get(address)
 	# if neither, return empty list
