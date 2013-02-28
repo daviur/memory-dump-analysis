@@ -4,9 +4,13 @@ Created on Aug 6, 2012
 @author: David I. Urbina
 '''
 from collections import OrderedDict
+import extras.services as services
 import networkx as nx
 import re
-import extras.services as services
+import struct
+
+# Global constant
+_WORD_SZ_ = 4
 
 class Segment:
 	'''
@@ -155,23 +159,40 @@ class ReferencePath(nx.DiGraph):
 		return self.__str__()
 
 
+	def __equal_shape(self, node1, node2):
+		# 1 Equal size?
+		if node1.size != node2.size:
+			return False
+		# 2 Equal pointers?
+		for k in node1.pointers.keys():
+			if node2.pointers.get(k, None) == None:
+				word = struct.unpack('<I', node2.data[k:k + _WORD_SZ_])[0]
+				# Pointer is not present, is it NULL?
+				if word != 0:
+					return False
+		# If 1 and 2 are TRUE, node1 node 2 have equal shape
+		return True
+
+
 	def normalize(self):
-		out_node = self.root
-		sig = nx.DiGraph()
+		'''
+		Derives a possible signature path from this reference path.
+		'''
+		sig = nx.DiGraph()  # The signature path is a graph.
+		out_node = self.root  # We start and the root node.
 		in_node = self.successors(out_node)
 		out_name = '{}({})'.format(out_node.name, out_node.size)
 		sig.add_node(out_name)
-		num_node = 0
 		gen = services.get_all_the_letters()
 		while len(in_node) > 0:
 			if not isinstance(in_node[0], DataStructure):
 				break
 			offset = self.get_edge_data(out_node, in_node[0])['label']
-			if out_node.size == in_node[0].size:  # TODO: add shape analysis
-	# 			if out_node.pointers.keys() == in_node[0].pointers.keys():
+			# If equal shape, merge them...
+			if self.__equal_shape(out_node, in_node[0]):
 				sig.add_edge(out_name, out_name, label=offset)
+			# If not, keep them separate
 			else:
-				num_node += 1
 				in_name = '{}({})'.format(next(gen), in_node[0].size)
 				sig.add_edge(out_name, in_name, label=offset)
 				out_name = in_name
