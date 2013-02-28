@@ -105,6 +105,10 @@ class MemoryDump:
 
 
 	def __parse_heap_data_structures(self):
+		'''
+		Parses the Heap segments present in the memory dump and creates a list
+		of allocated data structures.
+		'''
 		for h in self.heaps:
 			for i in xrange(h.offset + 0x58, h.offset + 0x58 + (_HEAP_SEG_ * _WORD_SZ_), _WORD_SZ_):
 				seg_addr = struct.unpack('<I', self.data[i:i + _WORD_SZ_])[0]
@@ -152,8 +156,9 @@ class MemoryDump:
 		'''
 		verifies if "addr" can be a valid pointer to data structure.
 		'''
-		# return addr % _WORD_SZ_ == 0 and self.__is_in_heaps(addr)
-		return addr % _WORD_SZ_ == 0 and (self.__is_in_heaps(addr) or self.__is_in_private_data(addr))
+		return addr % _WORD_SZ_ == 0 and self.__is_in_heaps(addr)
+# TODO: Include Private Data
+# 		return addr % _WORD_SZ_ == 0 and (self.__is_in_heaps(addr) or self.__is_in_private_data(addr))
 
 
 	def __find_global_pointers(self):
@@ -185,9 +190,10 @@ class MemoryDump:
 		'''
 		count = 0
 		for dss in self.data_structures.values():
+# TODO: exclude Private Data segments
+# 			if dss.size >= _WORD_SZ_ and not isinstance(dss, PrivateData):
 			# minimun size is the WORD size
-			# exclude Private Data segments
-			if dss.size >= _WORD_SZ_ and not isinstance(dss, PrivateData):
+			if dss.size >= _WORD_SZ_:
 				for o in xrange(dss.offset, dss.offset + dss.size, _WORD_SZ_):
 					addr = struct.unpack('<I', self.data[o:o + _WORD_SZ_])[0]
 					if self.__is_candidate_pointers(addr):
@@ -282,18 +288,17 @@ if __name__ == '__main__':
 
 	parser = argparse.ArgumentParser(description='Performs operations over memory dumps.')
 	parser.add_argument(dest='dump', metavar='dump', help='memory dump file.')
-	parser.add_argument('-o', dest='offset1' , metavar='offset', help='offset to convert to virtual address.')
-	parser.add_argument('-f', dest='offset2', metavar='offset', help='offset to find pointers.')
+	parser.add_argument('-ota', dest='offset' , metavar='offset', help='offset to convert to virtual address.')
+	parser.add_argument('-ato', dest='address' , metavar='address', help='address to convert to offset.')
 	args = parser.parse_args()
 
 	md = reader.read_memory_dump(args.dump)
 	md.build_memory_graph()
 	services.export_memory_graph(md)
 
-	if args.offset1 != None:
-		print("offset {} corresponds to v-address 0x{:x}".format(args.offset1, services.address_from_offset(md, int(args.offset1, 16))))
+	if args.offset != None:
+		print("offset {} corresponds to v-address 0x{:x}".format(args.offset, afo(md, int(args.offset))))
 
-	if args.offset2 != None:
-		pointers = md.find_pointers_to_address(services.address_from_offset(md, int(args.offset2, 16)))
-		for a in pointers:
-			print('0x{:x}'.format(a))
+	if args.address != None:
+		print("address {} corresponds to offset {}".format(args.address, ofa(md, int(args.address, 16))))
+
