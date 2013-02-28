@@ -5,7 +5,7 @@ Created on Oct 3, 2012
 @author: David I. Urbina
 '''
 from __future__ import print_function
-from parts import PrivateData, ReferencePath
+from parts import ReferencePath, PrivateData
 import networkx as nx
 import extras.reader as reader
 
@@ -28,17 +28,17 @@ def by_string(memory_dump, ascii):
 
 	rps = list()
 	for n in G.nodes():
-		# Avoid Private Data
+# TODO: Avoid Private Data
 # 		if isinstance(n, PrivateData):
 # 			continue
 		for o in n.string_offset(ascii):
-			shortest_paths = list()
+			paths = list()
 			for m in md.modules:
 				try:
-					shortest_paths.extend(search_paths(G, m, n))
+					paths.extend(search_paths(G, m, n))
 				except nx.NetworkXNoPath:
 					continue
-			rps.extend(__build_reference_paths(G, shortest_paths, o, ascii))
+			rps.extend(__build_reference_paths(G, paths, o, ascii))
 	return rps
 
 
@@ -52,15 +52,15 @@ def by_address(memory_dump, address):
 	if ds == None:
 		return []
 
-	shortest_paths = list()
+	paths = list()
 	G = memory_dump.memory_graph
 	for m in memory_dump.modules:
 		try:
-			shortest_paths.extend(search_paths(G, m, ds))
+			paths.extend(search_paths(G, m, ds))
 		except nx.NetworkXNoPath:
 			pass
 
-	return __build_reference_paths(G, shortest_paths)
+	return __build_reference_paths(G, paths)
 
 
 if __name__ == '__main__':
@@ -86,10 +86,11 @@ if __name__ == '__main__':
 	if args.address != None:
 		rps = by_address(md, int(args.address, 16))
 		print('{} paths to data structure 0x{:x}'.format(len(rps), int(args.address, 16)))
-	# Search bye ascii value
+	# Search by ASCII
 	elif args.ascii != None:
 		rps = by_string(md, args.ascii)
 		print('{} paths to the ASCII string {}'.format(len(rps), args.ascii))
+	# Search by utf-16
 	elif args.unicode != None:
 		rps = by_string(md, args.unicode.encode('utf16'))
 		print('{} paths to the Unicode string {}'.format(len(rps), args.unicode))
