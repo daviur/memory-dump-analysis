@@ -7,11 +7,11 @@ Created on Aug 6, 2012
 from __future__ import print_function
 from collections import OrderedDict
 from parts import DataStructure, Pointer, PrivateData
+import extras.services as services
 import math
 import networkx as nx
 import numpy as np
 import pickle
-import services
 import struct
 
 # Renaming function
@@ -225,6 +225,7 @@ class MemoryDump:
 		'''
 		self.__parse_heap_data_structures()
 		print('Candidate data structures:', len(self.data_structures))
+# TODO: Add Private Data
 # 		self.__add_private_data()
 # 		print('Private data added')
 		count = self.__find_global_pointers()
@@ -276,7 +277,7 @@ class MemoryDump:
 
 
 if __name__ == '__main__':
-	import reader
+	import extras.reader as reader
 	import argparse
 
 	parser = argparse.ArgumentParser(description='Performs operations over memory dumps.')

@@ -6,7 +6,7 @@ Created on Aug 6, 2012
 from collections import OrderedDict
 import networkx as nx
 import re
-import services
+import extras.services as services
 
 class Segment:
 	'''
@@ -157,10 +157,10 @@ class ReferencePath(nx.DiGraph):
 
 	def normalize(self):
 		out_node = self.root
-		rp = nx.DiGraph()
+		sig = nx.DiGraph()
 		in_node = self.successors(out_node)
 		out_name = '{}({})'.format(out_node.name, out_node.size)
-		rp.add_node(out_name)
+		sig.add_node(out_name)
 		num_node = 0
 		gen = services.get_all_the_letters()
 		while len(in_node) > 0:
@@ -169,12 +169,12 @@ class ReferencePath(nx.DiGraph):
 			offset = self.get_edge_data(out_node, in_node[0])['label']
 			if out_node.size == in_node[0].size:  # TODO: add shape analysis
 	# 			if out_node.pointers.keys() == in_node[0].pointers.keys():
-				rp.add_edge(out_name, out_name, label=offset)
+				sig.add_edge(out_name, out_name, label=offset)
 			else:
 				num_node += 1
 				in_name = '{}({})'.format(next(gen), in_node[0].size)
-				rp.add_edge(out_name, in_name, label=offset)
+				sig.add_edge(out_name, in_name, label=offset)
 				out_name = in_name
 			out_node = in_node[0]
 			in_node = self.successors(out_node)
-		return rp
+		return sig

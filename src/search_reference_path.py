@@ -7,7 +7,7 @@ Created on Oct 3, 2012
 from __future__ import print_function
 from parts import PrivateData, ReferencePath
 import networkx as nx
-import reader
+import extras.reader as reader
 
 search_paths = nx.all_shortest_paths
 
@@ -29,8 +29,8 @@ def by_string(memory_dump, ascii):
 	rps = list()
 	for n in G.nodes():
 		# Avoid Private Data
-		if isinstance(n, PrivateData):
-			continue
+# 		if isinstance(n, PrivateData):
+# 			continue
 		for o in n.string_offset(ascii):
 			shortest_paths = list()
 			for m in md.modules:
@@ -65,7 +65,10 @@ def by_address(memory_dump, address):
 
 if __name__ == '__main__':
 	import argparse
-	parser = argparse.ArgumentParser(description='List the possible reference paths to the specified data structure in a memory dump. The data structure may be specified by its value or by its address. By default it search for shortest reference paths.')
+	parser = argparse.ArgumentParser(description='List the possible reference \
+		paths to the specified data structure in a memory dump. The data structure \
+		may be specified by its value or by its address. \
+		By default it search for shortest reference paths.')
 	parser.add_argument(dest='dump', metavar='dump', help='memory dump file.')
 	parser.add_argument('-a', dest='address' , metavar='address', help='address of the data structure.')
 	parser.add_argument('-s', dest='ascii', metavar='ascii', help='ASCII ascii value to search for.')

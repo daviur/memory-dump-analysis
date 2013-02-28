@@ -6,9 +6,9 @@ Created on Dec 13, 2012
 '''
 from __future__ import print_function
 import argparse
-import diffing
-import reader
-import value_findding
+import extras.reader as reader
+import finding_doi.memory_diffing as diffing
+import finding_doi.value_scanning as scanning
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='Compares memory dumps data structures')
@@ -57,7 +57,7 @@ if __name__ == '__main__':
 		print('Offset:', o)
 		for (md, ds) in zip(memory_dumps, dss):
 			print('\t', md.name, '-', '0x{:x}'.format(ds.address))
-			for (t, v) in value_findding.get_possible_values(ds, o):
+			for (t, v) in scanning.get_possible_values(ds, o):
 				print('\t\t{:7} {}'.format(t, v))
 
 # 	diffing.draw_segments_diffing(dss, offsets1)

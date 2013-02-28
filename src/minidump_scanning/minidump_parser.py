@@ -23,7 +23,9 @@ _STDLIB_EXC_ = ['rpcrt4.dll', 'ole32.dll', 'advapi32.dll', 'user32.dll', 'comctl
  				'rasapi32.dll', 'rasman.dll', 'tapi32.dll', 'rtutils.dll', 'shdoclc.dll',
  				'jscript.dll', 'mswsock.dll', 'hnetcfg.dll', 'wshtcpip.dll', 'dnsapi.dll',
  				'winrnr.dll', 'rasadhlp.dll', 'schannel.dll', 'userenv.dll', 'dssenh.dll',
- 				'perfos.dll', 'wdmaud.drv', 'msacm32.drv', 'midimap.dll']
+ 				'perfos.dll', 'wdmaud.drv', 'msacm32.drv', 'midimap.dll', 'msvcr100.dll',
+ 				'msvcp100.dll', 'kernel32.dll', 'msvcrt.dll', 'ntdll.dll', 'mshtml.dll',
+ 				'msctf.dll']
 
 # Modules to include
 _STDLIB_INCL_ = ['kernel32.dll', 'msvcrt.dll', 'ntdll.dll', 'mshtml.dll', 'msctf.dll']

@@ -6,8 +6,8 @@ Created on Jan 22, 2013
 '''
 from __future__ import print_function
 import argparse
-import reader
-import writer
+import extras.reader as reader
+import extras.writer as writer
 import sys
 
 if __name__ == '__main__':
@@ -22,13 +22,13 @@ if __name__ == '__main__':
 	for m in md.modules:
 		if m.address == int(args.address, 16):
 			writer.write_memory_dump_data(args.dump + '-' + args.address + '.core', m.data[m.offset: m.offset + m.size])
-			print('Core dump written.')
+			print('Core dump for data structure', args.address , 'written.')
 			sys.exit()
 
 	try:
 		ds = md.data_structures[int(args.address, 16)]
 		writer.write_memory_dump_data(args.dump + '-' + args.address + '.core', ds.data[ds.offset: ds.offset + ds.size])
-		print('Core dump written.')
+		print('Core dump for data structure', args.address , 'written.')
 	except KeyError:
 		print('Error:', args.address, 'not present in memory dump', args.dump)
 
