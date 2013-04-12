@@ -26,8 +26,8 @@ if __name__ == '__main__':
 			sys.exit()
 
 	try:
-		ds = md.data_structures[int(args.address, 16)]
-		writer.write_memory_dump_data(args.dump + '-' + args.address + '.core', ds.data[ds.offset: ds.offset + ds.size])
+		b = md.data_structures[int(args.address, 16)]
+		writer.write_memory_dump_data(args.dump + '-' + args.address + '.core', b.data[b.offset: b.offset + b.size])
 		print('Core dump for data structure', args.address , 'written.')
 	except KeyError:
 		print('Error:', args.address, 'not present in memory dump', args.dump)

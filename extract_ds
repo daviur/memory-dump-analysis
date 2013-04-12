@@ -1,6 +1,6 @@
 #!/bin/bash
 
-python src/data_structure_dumping.py $1 $2 $3
+python src/data_structure_dumping.py $1 $2
 if [ "$3" == "" ]; then
     xxd "$2-$1.core" "$2-$1.core.hex"
 else

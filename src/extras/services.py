@@ -67,3 +67,23 @@ def get_all_the_letters(begin='A', end='Z'):
 	endNum = ord(end)
 	for number in xrange(beginNum, endNum + 1):
 		yield chr(number)
+
+
+def extract_ranges(offsets):
+	'''
+	Extract a list of ranges from a list of offsets
+	'''
+	soffsets = sorted(offsets)
+	range1 = soffsets[0]  # Beginning of range
+	range2 = range1  # End of range
+	ranges = list()
+	for o in soffsets[1:]:
+		if range2 != o - 1:
+			ranges.append((range1, range2))
+			range1 = range2 = o
+		else:
+			range2 = o
+	ranges.append((range1, range2))
+	return ranges
+
+
