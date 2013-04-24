@@ -51,7 +51,7 @@ if __name__ == '__main__':
     # Finding Data of Interest
     #===========================================================================
     print('FINDING DATA OF INTEREST')
-    ocb = dict()  # Different offsets by Changing Buffer
+    obb = dict()  # Offsets by Buffer
     diffing = None  # (Different, Removed, Added) Buffers
     if len(pos_dumps) > 1:
     #--------------------------------------------- Memory Diffing at graph level
@@ -67,52 +67,53 @@ if __name__ == '__main__':
     #-------------------------------------------- Memory Diffing at buffer level
         print('\tDiffing buffers...', end='')
         for b in diffing[0].copy():
-            ocb[b] = memory_diffing.diff_memory_segments_by_address(b.address,
+            obb[b] = memory_diffing.diff_memory_segments_by_address(b.address,
                                                                         pos_dumps)
             # There is at least one common offset across dumps?
-            if len(ocb[b]) == 0:
-                del ocb[b]
+            if len(obb[b]) == 0:
+                del obb[b]
                 diffing[0].remove(b)
                 continue
 
             if args.neg_dump:
                 offsets = memory_diffing.diff_memory_segments_by_address(
                                         b.address, [pos_dumps[-1], neg_dump])
-                ocb[b] = ocb[b] - offsets
+                obb[b] = obb[b] - offsets
 # TODO: do we need ranges?
-            # ocb[b] = services.extract_ranges(list(ocb[b]))
+            # obb[b] = services.extract_ranges(list(obb[b]))
 
         print('READY')
 
         if len(pos_dumps) > 1:
             print('Changed:', len(diffing[0]))
             for b in diffing[0]:
-                print(repr(b), '#different offsets:', len(ocb[b]))
+                print(repr(b), '#different offsets:', len(obb[b]))
             print('Removed:', len(diffing[1]))
             services.print_collection(diffing[1])
             print('Added:', len(diffing[2]))
             services.print_collection(diffing[2])
 
+        # Adding the added buffers with offset 0
         for b in diffing[2]:
-            ocb[b] = {0}
+            obb[b] = {0}
 
         # The graph resulting from the memory diffing
         graph = memory_diffing.create_diff_graph(pos_dumps[-1], diffing)
-#         for (b, o) in ocb.items():
+#         for (b, o) in obb.items():
 #             print(b, o)
 
     #------------------------------------------------------------ Value Scanning
     if args.values:
         print('\tValue Scanning...', end='')
 
-        vob = dict()  # Value offset by buffer
+        obbbv = dict()  # Offsets by buffer by value
         # Only one memory dump?
         if diffing == None:  # Yes, use graph
-            vob = value_scanning.offsets_in_graph(graph, args.t, args.values[0])
+            obbbv = value_scanning.offsets_in_graph(graph, args.t, args.values[0])
         else:  # No, use diffing
-            vob = value_scanning.offsets_in_diffing(pos_dumps, args.values,
+            obbbv = value_scanning.offsets_in_diffing(pos_dumps, args.values,
                                                                 diffing, args.t)
-#         for (b, o) in vob.items():
+#         for (b, o) in obbbv.items():
 #             print(b, o)
         print('READY')
     #---------------------------- Intercepting Memory Diffing and Value Scanning
@@ -121,20 +122,20 @@ if __name__ == '__main__':
     # Memory Diffing and Value Scanning
     if len(pos_dumps) > 1 and args.values:
         print('\tIntercepting Memory Diffing and Value Scanning...')
-        for b in diffing[0]:
-            offsets = ocb[b] & {o[0] for o in vob[b]}
+        for b in diffing[0]:  # Intercept changed with values
+            offsets = obb[b] & {o[0] for o in obbbv[b]}
             if len(offsets) > 0:
                 fcob[b] = offsets
-        for b in diffing[2]:
-            offsets = {o[0] for o in vob[b]}
+        for b in diffing[2]:  # Intercept added with values
+            offsets = {o[0] for o in obbbv[b]}
             if len(offsets) > 0:
                 fcob[b] = offsets
     # Only Memory Diffing
     elif len(pos_dumps) > 1:
-        fcob = ocb
+        fcob = obb
     # Only Value Scanning
     else:
-        for (b, l) in vob.items():
+        for (b, l) in obbbv.items():
             if len(l) > 0:
                 of = {o[0] for o in l}
                 fcob[b] = of

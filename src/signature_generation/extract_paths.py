@@ -71,7 +71,7 @@ def by_buffer(graph, buff):
         try:
             paths.extend(search_paths(graph, m, buff))
         except nx.NetworkXNoPath:
-            print('ERROR - no path', m, buff)
+            pass
     return __build_reference_paths(graph, paths)
 
 

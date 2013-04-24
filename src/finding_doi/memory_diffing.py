@@ -63,7 +63,6 @@ def draw_memory_graph_intersection(pos_dumps, nodes):
 def diff_pair_memory_graphs(memory_dump1, memory_dump2):
     graph1 = memory_dump1.memory_graph
     graph2 = memory_dump2.memory_graph
-
     diff_nodes1 = set(graph1.nodes()) - set(graph2.nodes())
     diff_nodes2 = set(graph2.nodes()) - set(graph1.nodes())
     diff_nodes1 = KeyedSet(diff_nodes1, key=lambda buf: buf.address)
@@ -72,9 +71,7 @@ def diff_pair_memory_graphs(memory_dump1, memory_dump2):
     changed_nodes1 = diff_nodes2 & diff_nodes1
     removed_nodes = diff_nodes1 - changed_nodes1
     added_nodes = diff_nodes2 - changed_nodes2
-
     return (changed_nodes1, changed_nodes2, removed_nodes, added_nodes)
-
 
 
 def diff_memory_graphs(dumps):
@@ -220,7 +217,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     pos_dumps = [reader.read_memory_dump(f) for f in args.pos_dumps]
-
     for md in pos_dumps:
         md.build_memory_graph()
 
