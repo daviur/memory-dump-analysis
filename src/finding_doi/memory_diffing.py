@@ -43,7 +43,6 @@ def __draw_graph_diffing(memory_dump1, memory_dump2, differences):
 #     plt.savefig(memory_dump1.name + '-' + memory_dump2.name + '.png')
     plt.show()
 
-
 def draw_memory_graph_intersection(pos_dumps, nodes):
     pos = nx.pygraphviz_layout(pos_dumps[-1].memory_graph, prog='dot')
     nx.draw_networkx_nodes(pos_dumps[-1].memory_graph, pos, pos_dumps[-1].memory_graph.nodes(), node_color='b', node_size=200)
@@ -72,7 +71,6 @@ def diff_pair_memory_graphs(memory_dump1, memory_dump2):
     removed_nodes = diff_nodes1 - changed_nodes1
     added_nodes = diff_nodes2 - changed_nodes2
     return (changed_nodes1, changed_nodes2, removed_nodes, added_nodes)
-
 
 def diff_memory_graphs(dumps):
     differences = list()
@@ -109,8 +107,7 @@ def diff_memory_graphs(dumps):
 
     return (changed, removed, added)
 
-
-def create_diff_graph(dump, diff):
+def extract_diff_graph(dump, diff):
     diff_graph = dump.memory_graph.copy()
     diff_graph.roots = list()
     nodes = set()
@@ -120,7 +117,7 @@ def create_diff_graph(dump, diff):
                 nodes.add(m)
             try:
                 nodes.update(*list(search_paths(diff_graph, m, i)))
-            except nx.NetworkXNoPath:
+            except:
                 pass
         if m in nodes:
             diff_graph.roots.append(m)
@@ -140,14 +137,12 @@ def create_diff_graph(dump, diff):
     nx.write_dot(diff_graph, 'diff_graph.dot')
     return diff_graph
 
-
 def diff_pair_memory_segments(segment1, segment2):
     offsets = list()
     for i in xrange(min(segment1.size, segment2.size)):
         if segment1.data[segment1.offset + i] != segment2.data[segment2.offset + i]:
             offsets.append(i)
     return offsets
-
 
 def diff_memory_segments(segments):
     sets = list()
@@ -157,7 +152,6 @@ def diff_memory_segments(segments):
         sets.append(set(diff_pair_memory_segments(segments[i], segments[i + 1])))
     return set.intersection(*sets)
 
-
 def diff_memory_segments_by_address(address, dumps):
     dss = list()
     for md in dumps:
@@ -165,9 +159,11 @@ def diff_memory_segments_by_address(address, dumps):
             if n.address == address:
                 dss.append(n)
                 break
+        else:
+            # Dump md does not containt segment at address
+            return set()
 
     return diff_memory_segments(dss)
-
 
 def draw_segments_diffing(segments, offsets):
 
@@ -186,19 +182,25 @@ def draw_segments_diffing(segments, offsets):
     plt.imshow(data, interpolation="nearest")
     plt.show()
 
-
-def substract_intersections(pos_dumps, neg_dump, intersec1, intersec2):
+def substract_intersections(dumps1, dumps2, intersec1, intersec2):
+    '''
+    Subtracts the intersection of two sets of memorydumps.
+    '''
     changed1 = KeyedSet(intersec1[0], key=lambda seg: seg.address)
     changed2 = KeyedSet(intersec2[0], key=lambda seg: seg.address)
 
+    # Intersection of the "changed" buffers of both sets
     inter = changed2 & changed1
+    # Subtracting the "changed" buffers
     changed = changed1 - inter
 
     for seg in inter:
-        offsets1 = diff_memory_segments_by_address(seg.address, pos_dumps)
-        offsets2 = diff_memory_segments_by_address(seg.address, [pos_dumps[-1], neg_dump])
-        offsets = offsets1 - offsets2
-        if len(offsets) > 0:
+        offsets1 = diff_memory_segments_by_address(seg.address, dumps1)
+        offsets2 = diff_memory_segments_by_address(seg.address, dumps2)
+        # If more offsets changed in the intersection 1 than in intersection 2
+        # for a given buffer, add the buffer to the resulting
+        # "changed" set of buffers
+        if len(offsets1 - offsets2) > 0:
             changed.add(seg)
 
     removed1 = KeyedSet(intersec1[1], key=lambda seg: seg.address)
@@ -206,7 +208,6 @@ def substract_intersections(pos_dumps, neg_dump, intersec1, intersec2):
     added1 = KeyedSet(intersec1[2], key=lambda seg: seg.address)
     added2 = KeyedSet(intersec2[2], key=lambda seg: seg.address)
     return (changed, removed1 - removed2, added1 - added2)
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Diff memory dumps by memory graph.')
@@ -228,7 +229,7 @@ if __name__ == '__main__':
         intersec2 = diff_memory_graphs([pos_dumps[-1], neg_dump])
         intersec1 = substract_intersections(pos_dumps, neg_dump, intersec1, intersec2)
 
-    create_diff_graph(pos_dumps[-1], intersec1)
+    extract_diff_graph(pos_dumps[-1], intersec1)
 
     print('Changed:', len(intersec1[0]))
     services.print_collection(intersec1[0])

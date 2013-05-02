@@ -3,3 +3,4 @@
 find -name $1"*.dmp" -exec minidump_parser.py -msc {} \;
 find -name $1"*.txt" -exec ./extract_heaps {} \;
 find -name $1"*.txt" -exec ./extract_private_data {} \;
+find -name $1"*.txt" -exec ./extract_stacks {} \;

@@ -9,8 +9,8 @@ from parts import ReferencePath, PrivateData
 import networkx as nx
 import extras.reader as reader
 
-search_paths = nx.all_shortest_paths
-# search_paths = nx.all_simple_paths
+# search_paths = nx.all_shortest_paths
+search_paths = nx.all_simple_paths
 
 def __build_reference_paths(G, paths, offset=None, data=None):
     rps = list()
