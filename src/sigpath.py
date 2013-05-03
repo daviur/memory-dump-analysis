@@ -13,6 +13,10 @@ import networkx as nx
 import sys
 
 
+__author__ = 'David I. Urbina'
+__version__ = 3.0
+
+
 def process_command_line(argv):
     '''
     Return a 4-tuple: (positive dumps, negative dump, values, type).
@@ -123,7 +127,7 @@ def main(argv=None):
 #             print(b, o)
 
 # TODO: remove
-        return 1
+#         return 1
 
     #----------------------------------------------------------- Value Scanning
     if values:

@@ -9,10 +9,10 @@ import extras.services as services
 import networkx as nx
 import re
 import struct
-import sys
 
 # Global constant
 _WORD_SZ_ = 4
+
 
 class Encoding:
     def __init__(self, form, size, name):
@@ -20,8 +20,11 @@ class Encoding:
         self.size = size
         self.type = name
 
-encodings = [Encoding('<d', 8, 'double'), Encoding('<Q', 8, 'long'), Encoding('<I', 4, 'integer'),
-             Encoding('<f', 4, 'float'), Encoding('<H', 2, 'short'), Encoding('<B', 1, 'char')]
+
+encodings = [Encoding('<d', 8, 'double'), Encoding('<Q', 8, 'long'),
+             Encoding('<I', 4, 'integer'), Encoding('<f', 4, 'float'),
+             Encoding('<H', 2, 'short'), Encoding('<B', 1, 'char')]
+
 
 class Segment:
     '''
@@ -38,7 +41,6 @@ class Segment:
         self.pointers = OrderedDict()
         self.hash = None
 
-
     def string_offset(self, string):
         pascii = re.compile(string)
         sutf16 = string.encode('utf16')
@@ -54,7 +56,6 @@ class Segment:
                 offsets.append((i - self.offset, 'utf16'))
         return offsets
 
-
     def number_offset(self, value):
         '''
         Finds the list of offsets of a segment containing a specific value.
@@ -64,28 +65,27 @@ class Segment:
             # Try all possible number encodings
             for enc in encodings:
                 if o + enc.size <= self.offset + self.size:
-                    word = struct.unpack(enc.format, self.data[o:o + enc.size])[0]
+                    word = struct.unpack(enc.format,
+                                         self.data[o:o + enc.size])[0]
                     if word == value:
                         offsets.append((o - self.offset, enc.type))
         return offsets
 
-
     def __repr__(self):
         address = '{:x}'.format(self.address).zfill(8)
-        return '<seg a=' + address + ' s=' + repr(self.size) + ' o=' + repr(self.offset) + '>'
-
+        return '<seg a=' + address + ' s=' + repr(self.size) + ' o=' + \
+                                                    repr(self.offset) + '>'
 
     def __str__(self):
         return '0x{:x}({})'.format(self.address, self.size)
 
-
     def __eq__(self, other):
         return self.__hash__() == other.__hash__()
 
-
     def __hash__(self):
         if self.hash == None:
-            self.hash = hash(repr(self.address) + repr(self.size) + repr(self.data[self.offset: self.offset + self.size]))
+            self.hash = hash(repr(self.address) + repr(self.size) +
+                    repr(self.data[self.offset: self.offset + self.size]))
         return  self.hash
 
 
@@ -95,11 +95,31 @@ class PrivateData(Segment):
     '''
     def __repr__(self):
         address = '{:x}'.format(self.address).zfill(8)
-        return '<pd a=' + address + ' s=' + repr(self.size) + ' o=' + repr(self.offset) + '>'
-
+        return '<pd a=' + address + ' s=' + repr(self.size) + ' o=' + \
+                                                    repr(self.offset) + '>'
 
     def __str__(self):
         return 'Private Data 0x{:x}({})'.format(self.address, self.size)
+
+
+class Stack(Segment):
+    '''
+    Stack segment.
+    '''
+    def __init__(self, address, size, data=None):
+        '''
+        Constructor
+        '''
+        Segment.__init__(self, address, size, data=data)
+        self.name = address
+
+    def __repr__(self):
+        address = '{:x}'.format(self.address).zfill(8)
+        return '<st a=' + address + ' s=' + repr(self.size) + ' o=' + \
+                                                    repr(self.offset) + '>'
+
+    def __str__(self):
+        return 'Stack 0x{:x}({})'.format(self.address, self.size)
 
 
 class Module(Segment):
@@ -113,11 +133,10 @@ class Module(Segment):
         Segment.__init__(self, address, size, data=data)
         self.name = name
 
-
     def __repr__(self):
         address = '0x{:x}'.format(self.address).zfill(8)
-        return '<mod a=' + address + ' s=' + repr(self.size) + ' o=' + repr(self.offset) + ' n=' + self.name + '>'
-
+        return '<mod a=' + address + ' s=' + repr(self.size) + ' o=' + \
+                                repr(self.offset) + ' n=' + self.name + '>'
 
     def __str__(self):
         return '{} 0x{:x}({})'.format(self.name, self.address, self.size)
@@ -133,9 +152,9 @@ class DataStructure(Segment):
         '''
         Segment.__init__(self, address, size, data=data, offset=offset)
 
-
     def __repr__(self):
-        return '<ds a=0x{:x} o={} s={} #pointers={}>'.format(self.address, self.offset, self.size, len(self.pointers))
+        return '<ds a=0x{:x} o={} s={} #pointers={}>'.format(self.address,
+                                self.offset, self.size, len(self.pointers))
 
 
 class Pointer(Segment):
@@ -151,18 +170,18 @@ class Pointer(Segment):
         self.d_offset = d_offset
         self.segment = segment
 
-
     def __repr__(self):
-        return '<p a=0x{:x} o={} da=0x{:x} do={}>'.format(self.address, self.offset, self.d_address, self.d_offset)
-
+        return '<p a=0x{:x} o={} da=0x{:x} do={}>'.format(self.address,
+                                self.offset, self.d_address, self.d_offset)
 
     def __str__(self):
-        return '{}+0x{:x}'.format(self.segment, self.offset - self.segment.offset)
-
+        return '{}+0x{:x}'.format(self.segment,
+                                            self.offset - self.segment.offset)
 
     def __hash__(self):
         if self.hash == None:
-            self.hash = hash(repr(self.address) + repr(self.offset) + repr(self.d_address) + repr(self.d_offset))
+            self.hash = hash(repr(self.address) + repr(self.offset) +
+                                repr(self.d_address) + repr(self.d_offset))
         return self.hash
 
 
@@ -175,23 +194,20 @@ class ReferencePath(nx.DiGraph):
         self.root = root
         self.add_node(root)
 
-
     def __print_node(self, node):
         string = '{}'.format(node)
         suc = self.successors(node)
         if len(suc) > 0:
-            string += '[{}]->'.format(self.get_edge_data(node, suc[0])['label'])
+            string += '[{}]->'.format(self.get_edge_data(node,
+                                                            suc[0])['label'])
             return string + self.__print_node(suc[0])
         return string
-
 
     def __str__(self):
         return self.__print_node(self.root)
 
-
     def __repr__(self):
         return self.__str__()
-
 
     def __equal_shape(self, node1, node2):
         # 1 Equal size?
@@ -207,7 +223,6 @@ class ReferencePath(nx.DiGraph):
         # TODO: 3 Equal ASCII and Unicode strings?
         # If 1, 2 and 3 are TRUE, node1 and node2 have equal shape
         return True
-
 
     def normalize(self):
         '''

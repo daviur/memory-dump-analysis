@@ -1,18 +1,20 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 '''
 Created on Oct 3, 2012
 
 @author: David I. Urbina
 '''
 from __future__ import print_function
-from parts import ReferencePath, PrivateData
-import networkx as nx
+from parts import ReferencePath
+import argparse
 import extras.reader as reader
+import networkx as nx
 
 # search_paths = nx.all_shortest_paths
 search_paths = nx.all_simple_paths
 
-def __build_reference_paths(G, paths, offset=None, data=None):
+
+def _build_reference_paths(G, paths, offset=None, data=None):
     rps = list()
     for p in paths:
         rp = ReferencePath(p[0])
@@ -39,7 +41,7 @@ def by_string(memory_dump, ascii):
                     paths.extend(search_paths(G, m, n))
                 except nx.NetworkXNoPath:
                     continue
-            rps.extend(__build_reference_paths(G, paths, o, ascii))
+            rps.extend(_build_reference_paths(G, paths, o, ascii))
     return rps
 
 
@@ -60,7 +62,7 @@ def by_address(memory_dump, address):
             paths.extend(search_paths(G, m, b))
         except nx.NetworkXNoPath:
             pass
-    return __build_reference_paths(G, paths)
+    return _build_reference_paths(G, paths)
 
 
 def by_buffer(graph, buff):
@@ -72,24 +74,23 @@ def by_buffer(graph, buff):
             paths.extend(search_paths(graph, m, buff))
         except nx.NetworkXNoPath:
             pass
-    return __build_reference_paths(graph, paths)
+    return _build_reference_paths(graph, paths)
 
 
 if __name__ == '__main__':
-    import argparse
-    parser = argparse.ArgumentParser(description='List the possible reference \
-        paths to the specified data structure in a memory dump. The data structure \
-        may be specified by its value or by its address. \
-        By default it search for shortest reference paths.')
+    parser = argparse.ArgumentParser(description='List the possible \
+        reference paths to the specified data structure in a memory \
+        dump. The data structure may be specified by its value or by \
+        its address. By default it search for shortest reference paths.')
     parser.add_argument(dest='dump', metavar='dump', help='memory dump file.')
-    parser.add_argument('-a', dest='address' , metavar='address',
-                    help='address of the data structure.')
+    parser.add_argument('-a', dest='address', metavar='address',
+                                        help='address of the data structure.')
     parser.add_argument('-s', dest='ascii', metavar='ascii',
-                    help='ASCII value to search for.')
+                                            help='ASCII value to search for.')
     parser.add_argument('-u', dest='unicode', metavar='unicode',
-                    help='Unicode(UTF16) value to search for.')
+                                    help='Unicode(UTF16) value to search for.')
     parser.add_argument('--All', dest='all', action='store_true',
-                    help='search for all simple paths. It may take a long time.')
+                help='search for all simple paths. It may take a long time.')
     args = parser.parse_args()
 
     md = reader.read_memory_dump(args.dump)
@@ -101,7 +102,8 @@ if __name__ == '__main__':
     # Search by address
     if args.address != None:
         rps = by_address(md, int(args.address, 16))
-        print('{} paths to data structure 0x{:x}'.format(len(rps), int(args.address, 16)))
+        print('{} paths to data structure 0x{:x}'.format(len(rps),
+                                                     int(args.address, 16)))
     # Search by ASCII
     elif args.ascii != None:
         rps = by_string(md, args.ascii)
@@ -110,8 +112,10 @@ if __name__ == '__main__':
     elif args.unicode != None:
 #         rps = by_string(md, args.unicode.encode('utf16'))
         rps = by_string(md, unicode(args.unicode, 'utf16'))
-        print('{} paths to the Unicode(UTF16) string {}'.format(len(rps), args.unicode))
+        print('{} paths to the Unicode(UTF16) string {}'.format(len(rps),
+                                                                args.unicode))
 
-    for i, rp in zip(xrange(len(rps)), sorted(rps, key=lambda rp: str(rp.root))):
+    for i, rp in zip(xrange(len(rps)), sorted(rps, key=lambda rp:
+                                                                str(rp.root))):
         print(i, '-', rp)
         nx.write_dot(rps[i].normalize(), '{}-nrp{}.dot'.format(md.name, i))

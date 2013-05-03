@@ -51,10 +51,14 @@ def draw_memory_graph(memory_dump):
     plt.title(memory_dump.name)
 #     pos = nx.spring_layout(memory_dump.memory_graph, iterations=10)
     pos = nx.pygraphviz_layout(memory_dump.memory_graph, prog='dot')
-    nx.draw_networkx_nodes(memory_dump.memory_graph, pos, memory_dump.data_structures.values(), node_size=200, node_color='r')
-    nx.draw_networkx_nodes(memory_dump.memory_graph, pos, memory_dump.modules, node_color='b', node_size=200)
-    # nx.draw_networkx_nodes(memory_dump.memory_graph, pos, memory_dump.g_pointers, node_color='b', node_size=200)
-    nx.draw_networkx_edges(memory_dump.memory_graph, pos, memory_dump.memory_graph.edges())
+    nx.draw_networkx_nodes(memory_dump.memory_graph, pos,
+           memory_dump.data_structures.values(), node_size=200, node_color='r')
+    nx.draw_networkx_nodes(memory_dump.memory_graph, pos, memory_dump.modules,
+                                                node_color='b', node_size=200)
+    # nx.draw_networkx_nodes(memory_dump.memory_graph, pos,
+#                     memory_dump.g_pointers, node_color='b', node_size=200)
+    nx.draw_networkx_edges(memory_dump.memory_graph, pos,
+                                            memory_dump.memory_graph.edges())
     nx.draw_networkx_labels(memory_dump.memory_graph, pos, font_size=8)
 
     lr = plt.Circle((0, 0), 5, fc='r')
