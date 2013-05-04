@@ -10,8 +10,8 @@ import argparse
 import extras.reader as reader
 import networkx as nx
 
-# search_paths = nx.all_shortest_paths
-search_paths = nx.all_simple_paths
+search_paths = nx.all_shortest_paths
+# search_paths = nx.all_simple_paths
 
 
 def _build_reference_paths(G, paths, offset=None, data=None):

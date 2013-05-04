@@ -285,7 +285,7 @@ def main(argv=None):
             neg_dump.build_memory_graph()
             intersec2 = diff_memory_graphs([pos_dumps[-1], neg_dump])
             intersec1 = substract_intersections(pos_dumps, neg_dump,
-                                                            intersec1, intersec2)
+                                                        intersec1, intersec2)
 
             extract_diff_graph(pos_dumps[-1], intersec1)
             print('Changed:', len(intersec1[0]))
